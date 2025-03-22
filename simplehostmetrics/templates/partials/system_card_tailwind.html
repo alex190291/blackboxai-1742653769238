@@ -1,0 +1,117 @@
+<div class="bg-gray-800/50 backdrop-blur-md border border-gray-700/50 rounded-xl p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-lg font-semibold text-gray-200 flex items-center">
+            <i class="fas fa-server mr-2 text-primary-light"></i>
+            {{ _('System') }}
+        </h2>
+        <button class="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white">
+            <i class="fas fa-expand"></i>
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- CPU Section -->
+        <div class="space-y-4">
+            <div class="flex items-center text-gray-300 mb-2">
+                <i class="fas fa-microchip mr-2 text-primary-light"></i>
+                {{ _('CPU') }}
+            </div>
+            <div class="text-center">
+                <div id="cpuOverlay" class="text-3xl font-bold text-primary">0%</div>
+                <div class="text-sm text-gray-400">{{ _('Usage') }}</div>
+            </div>
+            <div class="flex items-center justify-center space-x-4 text-sm">
+                <div class="flex items-center">
+                    <span class="w-3 h-3 rounded bg-[#057055] mr-2"></span>
+                    <span class="text-gray-400">{{ _('CPU') }}</span>
+                </div>
+            </div>
+            <div class="h-32">
+                <canvas id="cpuChart" class="w-full h-full"></canvas>
+            </div>
+        </div>
+        
+        <!-- RAM Section -->
+        <div class="space-y-4">
+            <div class="flex items-center text-gray-300 mb-2">
+                <i class="fas fa-memory mr-2 text-primary-light"></i>
+                {{ _('RAM') }}
+            </div>
+            <div class="text-center">
+                <div id="memoryOverlay" class="text-3xl font-bold text-primary">0 GB</div>
+                <div class="text-sm text-gray-400">{{ _('Used') }}</div>
+            </div>
+            <div class="flex items-center justify-center space-x-4 text-sm">
+                <div class="flex items-center">
+                    <span class="w-3 h-3 rounded bg-[#1e8449] mr-2"></span>
+                    <span class="text-gray-400">{{ _('Free') }}</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="w-3 h-3 rounded bg-[#922b21] mr-2"></span>
+                    <span class="text-gray-400">{{ _('Used') }}</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="w-3 h-3 rounded bg-[#21618c] mr-2"></span>
+                    <span class="text-gray-400">{{ _('Cached') }}</span>
+                </div>
+            </div>
+            <div class="h-32">
+                <canvas id="memoryChart" class="w-full h-full"></canvas>
+            </div>
+        </div>
+        
+        <!-- Disk Section -->
+        <div class="space-y-4">
+            <div class="flex items-center text-gray-300 mb-2">
+                <i class="fas fa-hdd mr-2 text-primary-light"></i>
+                {{ _('Disk') }}
+            </div>
+            <div class="text-center">
+                <div id="diskOverlay" class="text-3xl font-bold text-primary">0 GB</div>
+                <div class="text-sm text-gray-400">{{ _('Used') }}</div>
+            </div>
+            <div class="flex items-center justify-center space-x-4 text-sm">
+                <div class="flex items-center">
+                    <span class="w-3 h-3 rounded bg-[#e74c3c] mr-2"></span>
+                    <span class="text-gray-400">{{ _('Used') }}</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="w-3 h-3 rounded bg-[#2ecc71] mr-2"></span>
+                    <span class="text-gray-400">{{ _('Free') }}</span>
+                </div>
+            </div>
+            <div class="h-32">
+                <canvas id="diskChart" class="w-full h-full"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed View -->
+    <div class="hidden mt-8" id="system-detail-view">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- CPU Details -->
+            <div class="space-y-2">
+                <div class="text-sm font-medium text-gray-400">{{ _('24hr CPU Usage') }}</div>
+                <div class="h-48">
+                    <canvas id="cpuDetailChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+            
+            <!-- RAM Details -->
+            <div class="space-y-2">
+                <div class="text-sm font-medium text-gray-400">{{ _('24hr RAM Usage') }}</div>
+                <div class="h-48">
+                    <canvas id="memoryDetailChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+            
+            <!-- Disk Details -->
+            <div class="space-y-2">
+                <div class="text-sm font-medium text-gray-400">{{ _('7-Day Disk Used') }}</div>
+                <div class="h-48">
+                    <canvas id="diskHistoryChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
