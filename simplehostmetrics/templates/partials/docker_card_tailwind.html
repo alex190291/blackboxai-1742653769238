@@ -1,0 +1,33 @@
+<div class="bg-gray-800/50 backdrop-blur-md border border-gray-700/50 rounded-xl p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-lg font-semibold text-gray-200 flex items-center">
+            <i class="fab fa-docker mr-2 text-primary-light"></i>
+            {{ _('Docker Containers') }}
+        </h2>
+        <button
+            class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition-colors flex items-center"
+            id="checkAllBtn"
+            onclick="checkAllUpdates()"
+            data-i18n="Check for updates"
+            title="{{ _('Check for updates') }}"
+        >
+            <i class="fas fa-sync-alt mr-2"></i>
+            {{ _('Check for updates') }}
+        </button>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead>
+                <tr class="text-left text-gray-400 border-b border-gray-700">
+                    <th class="pb-3 font-medium">{{ _('Status') }}</th>
+                    <th class="pb-3 font-medium">{{ _('Name') }}</th>
+                    <th class="pb-3 font-medium">{{ _('Uptime') }}</th>
+                    <th class="pb-3 font-medium">{{ _('Image') }}</th>
+                    <th class="pb-3 font-medium">{{ _('Actions') }}</th>
+                </tr>
+            </thead>
+            <tbody id="docker-data" class="divide-y divide-gray-700"></tbody>
+        </table>
+    </div>
+</div>
