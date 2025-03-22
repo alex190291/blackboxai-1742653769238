@@ -1,0 +1,77 @@
+<div class="card network-card full-width">
+    <div class="card-header">
+        <div class="card-title-container">
+            <h2 class="card-title">{{ _('Network Throughput') }}</h2>
+            <div class="color-labels">
+                <div class="color-label">
+                    <span class="color-box" style="background-color: #057055;"></span>
+                    <span>{{ _('Input') }}</span>
+                </div>
+                <div class="color-label">
+                    <span class="color-box" style="background-color: #922b21;"></span>
+                    <span>{{ _('Output') }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-actions">
+            <button class="btn-icon"><i class="fas fa-expand"></i></button>
+            <button
+                class="settings-btn"
+                id="customGraphSettingsBtn"
+                title="{{ _('Custom Network Graph Settings') }}"
+            >
+                ⚙️
+            </button>
+        </div>
+    </div>
+    <!-- Main network chart -->
+    <div class="stat-container">
+        <canvas id="networkChart"></canvas>
+    </div>
+    <!-- Detailed network view with interface-specific charts -->
+    <div class="detail-view" id="network-detail-view">
+        <div id="customGraphDisplay" class="custom-graph-container"></div>
+    </div>
+</div>
+
+<!-- Modal Container for Custom Network Graph Settings -->
+<div id="customGraphModal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 id="modalTitle">{{ _('Custom Network Graph Settings') }}</h3>
+            <button id="closeModalBtn" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="customGraphForm">
+                <div class="form-group">
+                    <label for="graphName">{{ _('Graph Name') }}</label>
+                    <input
+                        type="text"
+                        id="graphName"
+                        name="graphName"
+                        placeholder="{{ _('My Custom Graph') }}"
+                    />
+                </div>
+                <div class="form-group">
+                    <label>{{ _('Network Interfaces') }}</label>
+                    <div id="interfacesWrapper"></div>
+                    <button type="button" id="addInterfaceBtn" class="btn primary">
+                        {{ _('Add Interface') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" id="saveGraphConfigBtn" class="btn primary">
+                {{ _('Save') }}
+            </button>
+            <button
+                type="button"
+                id="cancelGraphConfigBtn"
+                class="btn danger"
+            >
+                {{ _('Cancel') }}
+            </button>
+        </div>
+    </div>
+</div>
