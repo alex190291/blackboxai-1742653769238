@@ -1,0 +1,100 @@
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fas fa-server"></i> {{ _('System') }}
+        </div>
+        <div class="card-actions">
+            <button class="btn-icon"><i class="fas fa-expand"></i></button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="metric-grid">
+            <!-- CPU Section -->
+            <div class="metric-section">
+                <div class="section-header">
+                    <i class="fas fa-microchip"></i> {{ _('CPU') }}
+                </div>
+                <div class="metric-value" id="cpuOverlay">0%</div>
+                <div class="metric-label">{{ _('Usage') }}</div>
+                <div class="color-labels small">
+                    <div class="color-label">
+                        <span class="color-box" style="background-color: rgba(5,112,85,1);"></span>
+                        <span>{{ _('CPU') }}</span>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="cpuChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- RAM Section -->
+            <div class="metric-section">
+                <div class="section-header">
+                    <i class="fas fa-memory"></i> {{ _('RAM') }}
+                </div>
+                <div class="metric-value" id="memoryOverlay">0 GB</div>
+                <div class="metric-label">{{ _('Used') }}</div>
+                <div class="color-labels small">
+                    <div class="color-label">
+                        <span class="color-box" style="background-color: #1e8449;"></span>
+                        <span>{{ _('Free') }}</span>
+                    </div>
+                    <div class="color-label">
+                        <span class="color-box" style="background-color: #922b21;"></span>
+                        <span>{{ _('Used') }}</span>
+                    </div>
+                    <div class="color-label">
+                        <span class="color-box" style="background-color: #21618c;"></span>
+                        <span>{{ _('Cached') }}</span>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="memoryChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Disk Section -->
+            <div class="metric-section">
+                <div class="section-header">
+                    <i class="fas fa-hdd"></i> {{ _('Disk') }}
+                </div>
+                <div class="metric-value" id="diskOverlay">0 GB</div>
+                <div class="metric-label">{{ _('Used') }}</div>
+                <div class="color-labels small">
+                    <div class="color-label">
+                        <span class="color-box" style="background-color: #e74c3c;"></span>
+                        <span>{{ _('Used') }}</span>
+                    </div>
+                    <div class="color-label">
+                        <span class="color-box" style="background-color: #2ecc71;"></span>
+                        <span>{{ _('Free') }}</span>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="diskChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="detail-view" id="system-detail-view">
+        <div class="metric-details-grid">
+            <!-- CPU Details -->
+            <div class="metric-detail">
+                <div class="graph-label">{{ _('24hr CPU Usage') }}</div>
+                <canvas id="cpuDetailChart"></canvas>
+            </div>
+            
+            <!-- RAM Details -->
+            <div class="metric-detail">
+                <div class="graph-label">{{ _('24hr RAM Usage') }}</div>
+                <canvas id="memoryDetailChart"></canvas>
+            </div>
+            
+            <!-- Disk Details -->
+            <div class="metric-detail">
+                <div class="graph-label">{{ _('7-Day Disk Used') }}</div>
+                <canvas id="diskHistoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div> 
