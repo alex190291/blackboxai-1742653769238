@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="{{ get_locale() }}" class="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="csrf-token" content="{{ csrf_token() }}" />
+        <title>{% block title %}{{ _('Dashboard') }}{% endblock %}</title>
+        
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: {
+                                DEFAULT: '#2d5a4f',
+                                dark: '#1e3d35',
+                                light: '#3c7669'
+                            }
+                        },
+                        fontFamily: {
+                            'sans': ['Inter', 'sans-serif'],
+                        },
+                        animation: {
+                            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        }
+                    }
+                }
+            }
+        </script>
+
+        <!-- Custom Styles -->
+        <style type="text/tailwind">
+            @layer utilities {
+                .bg-glass {
+                    @apply bg-gray-800/50 backdrop-blur-md border border-gray-700/50;
+                }
+                .text-glass {
+                    @apply text-gray-300;
+                }
+            }
+        </style>
+
+        <!-- Google Fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+        
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+        <!-- Charts -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+
+        <!-- Color synchronization script -->
+        <script src="{{ url_for('static', filename='colorSync.js') }}"></script>
+
+        {% block extra_styles %}{% endblock %}
+        {% block head %}{% endblock %}
+
+        <script>
+            // Define a temporary t function immediately to prevent "t is not defined" errors
+            window.t = function(key) { return key; };
+        </script>
+    </head>
+    <body class="min-h-screen bg-gray-900 text-white">
+        <!-- Background Pattern -->
+        <div class="fixed inset-0 -z-10">
+            <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"></div>
+            <div class="absolute inset-0 opacity-50">
+                <div class="absolute w-96 h-96 -top-48 -left-48 bg-primary/30 rounded-full filter blur-3xl animate-pulse-slow"></div>
+                <div class="absolute w-96 h-96 -bottom-48 -right-48 bg-primary/20 rounded-full filter blur-3xl animate-pulse-slow delay-1000"></div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="bg-glass sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center space-x-8">
+                        <a href="/" class="flex items-center space-x-2">
+                            <i class="fas fa-chart-line text-primary-light text-xl"></i>
+                            <span class="font-semibold text-white">SimpleHostMetrics</span>
+                        </a>
+                        <div class="hidden md:flex space-x-4">
+                            <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}" data-nav-link>
+                                <i class="fas fa-tachometer-alt mr-2"></i>{{ _('Dashboard') }}
+                            </a>
+                            <a href="/rtad" class="nav-link {% if request.path.startswith('/rtad') %}active{% endif %}" data-nav-link>
+                                <i class="fas fa-network-wired mr-2"></i>{{ _('RTAD Overview') }}
+                            </a>
+                            <a href="/npm" class="nav-link {% if request.path.startswith('/npm') %}active{% endif %}" data-nav-link>
+                                <i class="fas fa-random mr-2"></i>{{ _('Reverse Proxy') }}
+                            </a>
+                            <a href="/wireguard" class="nav-link {% if request.path.startswith('/wireguard') %}active{% endif %}" data-nav-link>
+                                <i class="fas fa-shield-alt mr-2"></i>{{ _('WireGuard VPN') }}
+                            </a>
+                            <a href="/settings" class="nav-link {% if request.path.startswith('/settings') %}active{% endif %}" data-nav-link>
+                                <i class="fas fa-cog mr-2"></i>{{ _('Settings') }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Language Selector -->
+                    <div class="relative flex items-center">
+                        <button id="languageButton" class="flex items-center space-x-2 px-4 py-2 bg-gray-700/50 rounded-lg hover:bg-gray-600/50 transition-colors duration-200">
+                            <i class="fas fa-globe text-primary-light"></i>
+                            <span>{{ config['LANGUAGES'][get_locale()] }}</span>
+                        </button>
+                        <div id="languageDropdown" class="hidden absolute right-0 top-full mt-2 w-48 rounded-md shadow-lg bg-glass ring-1 ring-black ring-opacity-5 divide-y divide-gray-700">
+                            {% for code, name in config['LANGUAGES'].items() %}
+                                <a href="{{ url_for('core.set_language', language=code) }}" 
+                                   class="block px-4 py-2 text-sm hover:bg-gray-700/50 {% if get_locale() == code %}bg-primary/50 text-white{% else %}text-gray-300{% endif %}">
+                                    {{ name }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Mobile Navigation -->
+        <div class="md:hidden fixed bottom-0 left-0 right-0 bg-glass border-t border-gray-700/50 z-50">
+            <div class="grid grid-cols-5 gap-1 p-2">
+                <a href="/" class="flex flex-col items-center p-2 rounded-lg {% if request.path == '/' %}bg-primary/50{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span class="text-xs mt-1">{{ _('Dashboard') }}</span>
+                </a>
+                <a href="/rtad" class="flex flex-col items-center p-2 rounded-lg {% if request.path.startswith('/rtad') %}bg-primary/50{% endif %}">
+                    <i class="fas fa-network-wired"></i>
+                    <span class="text-xs mt-1">{{ _('RTAD') }}</span>
+                </a>
+                <a href="/npm" class="flex flex-col items-center p-2 rounded-lg {% if request.path.startswith('/npm') %}bg-primary/50{% endif %}">
+                    <i class="fas fa-random"></i>
+                    <span class="text-xs mt-1">{{ _('Proxy') }}</span>
+                </a>
+                <a href="/wireguard" class="flex flex-col items-center p-2 rounded-lg {% if request.path.startswith('/wireguard') %}bg-primary/50{% endif %}">
+                    <i class="fas fa-shield-alt"></i>
+                    <span class="text-xs mt-1">{{ _('VPN') }}</span>
+                </a>
+                <a href="/settings" class="flex flex-col items-center p-2 rounded-lg {% if request.path.startswith('/settings') %}bg-primary/50{% endif %}">
+                    <i class="fas fa-cog"></i>
+                    <span class="text-xs mt-1">{{ _('Settings') }}</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-16 md:mb-8">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Scripts -->
+        <script src="{{ url_for('static', filename='notifications.js') }}"></script>
+        <script src="{{ url_for('static', filename='translations/js/settingsTranslations.js') }}"></script>
+        {% block scripts %}{% endblock %}
+
+        <!-- Debug Integrator -->
+        {% if debug_tab %}
+        <script src="{{ url_for('debug.debug_integrator_js') }}"></script>
+        <script>
+            if (window.DebugIntegrator) {
+                window.DebugIntegrator.updateConfig({
+                    mode: 'panel',
+                    position: 'bottom-right',
+                    buttonText: 'Debug Tools',
+                    panelStyles: {
+                        height: '60vh',
+                        backgroundColor: 'var(--background-color)'
+                    },
+                    monitorOnLoad: true
+                });
+            }
+        </script>
+        {% endif %}
+
+        <!-- Language Selector Script -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const languageButton = document.getElementById('languageButton');
+                const languageDropdown = document.getElementById('languageDropdown');
+                
+                languageButton.addEventListener('click', function(event) {
+                    languageDropdown.classList.toggle('hidden');
+                    event.stopPropagation();
+                });
+                
+                document.addEventListener('click', function(event) {
+                    if (!languageButton.contains(event.target) && !languageDropdown.contains(event.target)) {
+                        languageDropdown.classList.add('hidden');
+                    }
+                });
+
+                // Language change handler
+                const languageOptions = document.querySelectorAll('.language-option');
+                languageOptions.forEach(option => {
+                    option.addEventListener('click', function() {
+                        const href = this.getAttribute('href');
+                        const language = href.split('language=')[1];
+                        document.cookie = `locale=${language};path=/;max-age=${60*60*24*365}`;
+                        localStorage.setItem('shouldUpdateTranslations', 'true');
+                    });
+                });
+            });
+
+            // Load translations
+            async function loadTranslations() {
+                try {
+                    const translationsModule = await import('/static/translations/index.js');
+                    window.translations = translationsModule.default;
+                    window.t = function(key) {
+                        return translationsModule.t(key, locale);
+                    };
+                    window.translationsLoaded = true;
+                    window.dispatchEvent(new Event('translationsLoaded'));
+                } catch (error) {
+                    console.error('Error loading translations:', error);
+                }
+            }
+            
+            loadTranslations();
+        </script>
+    </body>
+</html>
