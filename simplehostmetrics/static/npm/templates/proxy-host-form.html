@@ -1,0 +1,116 @@
+{{idField}}
+<div class="tabs">
+  <button type="button" class="btn secondary tab-link active" data-tab="general">${window.t('General')}</button>
+  <button type="button" class="btn secondary tab-link" data-tab="custom">${window.t('Custom Nginx Config')}</button>
+</div>
+<div class="tab-content" id="generalTab">
+  <div class="form-group">
+    <label for="domain_names">${window.t('Domain Names (comma-separated)')}</label>
+    <input type="text" id="domain_names" name="domain_names" value="{{domainNames}}" required>
+  </div>
+  <div class="form-group">
+    <label for="forward_host">${window.t('Forward Host')}</label>
+    <input type="text" id="forward_host" name="forward_host" value="{{forwardHost}}" required>
+  </div>
+  <div class="form-group">
+    <label for="forward_port">${window.t('Forward Port')}</label>
+    <input type="number" id="forward_port" name="forward_port" value="{{forwardPort}}" required>
+  </div>
+  <div class="form-group">
+    <label for="forward_scheme">${window.t('Upstream Scheme')}</label>
+    <select id="forward_scheme" name="forward_scheme" required>
+      <option value="http" {{forwardSchemeHttp}}>http</option>
+      <option value="https" {{forwardSchemeHttps}}>https</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="certificate_id">${window.t('Certificate')}</label>
+    <select id="certificate_id" name="certificate_id" required></select>
+  </div>
+  <div class="form-group">
+    <label for="access_list_id">${window.t('Access List')}</label>
+    <select id="access_list_id" name="access_list_id">
+      <option value="">${window.t('None')}</option>
+    </select>
+  </div>
+
+  <div class="form-group toggle">
+    <label>
+      <span class="toggle-switch">
+        <input type="checkbox" id="cache_assets" name="cache_assets" {{cacheAssets}}>
+        <span class="slider"></span>
+      </span>
+      <span class="toggle-label">${window.t('Cache Assets')}</span>
+    </label>
+  </div>
+
+  <div class="form-group toggle">
+    <label>
+      <span class="toggle-switch">
+        <input type="checkbox" id="websockets_support" name="websockets_support" {{websocketsSupport}}>
+        <span class="slider"></span>
+      </span>
+      <span class="toggle-label">${window.t('Websockets Support')}</span>
+    </label>
+  </div>
+
+  <div class="form-group toggle">
+    <label>
+      <span class="toggle-switch">
+        <input type="checkbox" id="block_exploits" name="block_exploits" {{blockExploits}}>
+        <span class="slider"></span>
+      </span>
+      <span class="toggle-label">${window.t('Block Common Exploits')}</span>
+    </label>
+  </div>
+
+  <div class="form-group toggle">
+    <label>
+      <span class="toggle-switch">
+        <input type="checkbox" id="ssl_forced" name="ssl_forced" {{sslForced}}>
+        <span class="slider"></span>
+      </span>
+      <span class="toggle-label">${window.t('Force SSL')}</span>
+    </label>
+  </div>
+
+  <div class="form-group toggle">
+    <label>
+      <span class="toggle-switch">
+        <input type="checkbox" id="http2_support" name="http2_support" {{http2Support}}>
+        <span class="slider"></span>
+      </span>
+      <span class="toggle-label">${window.t('HTTP/2 Support')}</span>
+    </label>
+  </div>
+
+  <div class="form-group toggle">
+    <label>
+      <span class="toggle-switch">
+        <input type="checkbox" id="hsts_enabled" name="hsts_enabled" {{hstsEnabled}}>
+        <span class="slider"></span>
+      </span>
+      <span class="toggle-label">${window.t('HSTS Enabled')}</span>
+    </label>
+  </div>
+
+  <div class="form-group toggle">
+    <label>
+      <span class="toggle-switch">
+        <input type="checkbox" id="hsts_subdomains" name="hsts_subdomains" {{hstsSubdomains}}>
+        <span class="slider"></span>
+      </span>
+      <span class="toggle-label">${window.t('HSTS Subdomains')}</span>
+    </label>
+  </div>
+</div>
+<div class="tab-content" id="customTab" style="display:none;">
+  <div class="form-group">
+    <label for="custom_config">${window.t('Custom Nginx Config')}</label>
+    <textarea id="custom_config" name="custom_config" rows="30">{{customConfig}}</textarea>
+  </div>
+</div>
+<div class="form-actions">
+  <button type="submit" class="btn primary">{{submitBtnText}}</button>
+  <button type="button" class="btn danger modal-close">${window.t('Cancel')}</button>
+</div>
