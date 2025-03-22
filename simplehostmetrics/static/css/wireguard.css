@@ -1,0 +1,109 @@
+/* WireGuard-specific styles */
+
+.client-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 400px));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    justify-content: center;
+}
+
+.client-card {
+    background: var(--glass);
+    background-image: var(--glass-gradient);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    position: relative;
+    transition: transform 0.3s, box-shadow 0.3s;
+    width: auto;         /* changed */
+    max-width: 40%;     /* changed */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    margin: 0;           /* changed */
+}
+
+.client-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.client-info {
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+/* QR code specific styling */
+.qr-code {
+    text-align: center;
+    margin: 1.5rem 0;
+}
+
+.qr-code img, .qr-code canvas {
+    max-width: 250px;
+    border: 8px solid white;
+    border-radius: 8px;
+}
+
+/* Loading and error states */
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text);
+}
+
+.error {
+    color: #e74c3c;
+    text-align: center;
+    padding: 1rem;
+}
+
+/* Specific detail formatting for transfer stats */
+.client-details p strong {
+    margin-right: 0.5rem;
+    opacity: 0.8;
+}
+
+/* Additional card styling for transfer information */
+.client-card .transfer-info {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.transfer-stats {
+    font-size: 0.85rem;
+    color: var(--text);
+    opacity: 0.8;
+}
+
+.transfer-direction {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 0.25rem;
+}
+
+/* Styling for the "No clients" message */
+#clientsContainer p {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text);
+    opacity: 0.7;
+}
+
+
+/* Modal improvements */
+.modal {
+    /* Modal styles are now handled by standardized-modals.css */
+    /* Only wireguard-specific modal settings remain here */
+}
