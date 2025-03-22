@@ -1,0 +1,59 @@
+{% extends "base.html" %} {% block title %}{{ _('Dashboard') }}{% endblock %} {% block
+content %}
+<div class="hexagons" id="hexagon-container"></div>
+<div class="container">
+    <div class="dashboard-layout">
+        <!-- Combined System Card -->
+        {% include "partials/system_card.html" %}
+        
+        <!-- Vertical container for Network and Docker cards -->
+        <div class="vertical-cards">
+            {% include "partials/network_card.html" %}
+            {% include "partials/docker_card.html" %}
+        </div>
+    </div>
+</div>
+
+<!-- Mode Toggle Button -->
+<button class="mode-toggle" id="modeToggle" title="{{ _('Toggle light/dark mode') }}">
+    <span class="bulb-icon">💡</span>
+</button>
+{% endblock %} {% block scripts %}
+<!-- Load dockerControls.js first to ensure the button is icon-only -->
+<script src="{{ url_for('static', filename='dockerControls.js') }}"></script>
+<script src="{{ url_for('static', filename='animations.js') }}"></script>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+<script src="{{ url_for('static', filename='charts.js') }}"></script>
+<script src="{{ url_for('static', filename='stats.js') }}"></script>
+<script src="{{ url_for('static', filename='customNetworkManager.js') }}"></script>
+<script src="{{ url_for('static', filename='translations/js/dashboardTranslations.js') }}"></script>
+<script src="{{ url_for('static', filename='translations/js/navigationTranslations.js') }}"></script>
+<script>
+    // Update translations when language changes
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add our dashboard translations updater to the global translations update
+        const originalUpdateTranslations = window.updateNPMTranslations || function() {};
+        window.updateNPMTranslations = function() {
+            // Call original function if it exists
+            if (typeof originalUpdateTranslations === 'function') {
+                originalUpdateTranslations();
+            }
+            
+            // Update dashboard translations
+            if (window.updateDashboardTranslations) {
+                window.updateDashboardTranslations();
+            }
+            
+            // Update navigation translations
+            if (window.updateNavigationTranslations) {
+                window.updateNavigationTranslations();
+            }
+            
+            // Ensure the docker button is still icon-only
+            if (window.updateDockerTranslations) {
+                window.updateDockerTranslations();
+            }
+        };
+    });
+</script>
+{% endblock %}
