@@ -1,0 +1,354 @@
+/* Network Graphs CSS */
+
+/* Card Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.card-title-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #7d7d7d;
+}
+
+/* Color Labels */
+.color-labels {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.color-label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.color-box {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+/* Settings Button */
+.settings-btn {
+  background: rgba(0, 0, 0, 0.2);
+  border: none;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-left: 5px;
+}
+
+.settings-btn:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Custom Graph Container */
+.custom-graph-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1rem 0;
+}
+
+/* Custom Graph Card */
+.custom-graph-card {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.custom-graph-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--glass);
+  background-image: var(--glass-gradient);
+}
+
+.graph-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.graph-card-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.graph-card-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.graph-edit-btn,
+.graph-delete-btn {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  color: var(--text, #aaaaaa);
+}
+
+.graph-edit-btn:hover {
+  background: rgba(0, 100, 255, 0.2);
+}
+
+.graph-delete-btn:hover {
+  background: rgba(255, 0, 0, 0.2);
+}
+
+.graph-card-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-item span {
+  font-size: 12px;
+}
+
+.custom-graph-body {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.03);
+  flex: 1;
+}
+
+.custom-graph-body > div {
+  position: relative;
+  height: 600px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  padding: 10px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-graph-body > div canvas {
+  flex: 1;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0;
+}
+
+/* Detail View */
+.detail-view {
+  padding: 20px 0;
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Make sure the network detail view takes full width */
+#network-detail-view {
+  width: 100%;
+  max-width: 100%;
+  padding: 15px;
+  border-radius: 0 0 8px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Make sure the stat container matches the width */
+.stat-container {
+  width: 100%;
+  height: 200px;
+}
+
+/* Make sure canvas maintains aspect ratio */
+canvas#networkChart {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.form-group input[type="text"] {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input[type="text"]:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(45, 90, 79, 0.2);
+}
+
+/* Interface row styles */
+.interface-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.interface-row select,
+.interface-row input[type="text"] {
+  flex: 1;
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.interface-row select:focus,
+.interface-row input[type="text"]:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(45, 90, 79, 0.2);
+}
+
+.interface-row input[type="color"] {
+  width: 40px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Remove-btn specific styling */
+.remove-btn {
+  background-color: rgba(255, 0, 0, 0.2);
+  color: var(--text);
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.remove-btn:hover {
+  background-color: rgba(255, 0, 0, 0.3);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .card-title-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .interface-row {
+    flex-wrap: wrap;
+  }
+  
+  .interface-row select,
+  .interface-row input[type="text"] {
+    flex-basis: 100%;
+  }
+}
+
+.chart-label {
+  position: absolute;
+  top: 5px;
+  left: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 5;
+  text-transform: uppercase;
+}
+
+/* Button styling to match NPM modals */
+.btn.primary {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn.primary:hover {
+  background-color: rgba(45, 90, 79, 0.9);
+}
+
+.btn.danger {
+  background-color: rgba(231, 76, 60, 0.8);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn.danger:hover {
+  background-color: rgba(231, 76, 60, 1);
+} 
