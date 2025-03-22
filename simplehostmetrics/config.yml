@@ -1,0 +1,16 @@
+default_admin_email: admin@example.com
+default_admin_password: changeme
+logfiles:
+- path: /data/npm/logs/fallback_access.log
+- path: /data/npm/logs/fallback_error.log
+npm:
+  domain: npm:81
+  identity: admin@example.com
+  secret: asdf
+parse_all_logs: true
+primary_color: '#701028'
+secret_key: $up3r$ecr37Key
+security_password_salt: SecretSalt
+timezone: Europe/Berlin
+wireguard:
+  api_url: http://wireguard:421/api
