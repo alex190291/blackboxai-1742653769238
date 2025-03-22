@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Settings') }}{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+<script src="{{ url_for('static', filename='notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="hexagons" id="hexagon-container"></div>
+<div class="container">
+    <h1 data-i18n="Application Settings">{{ _('Application Settings') }}</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="notification {{ category }} flash-message" data-message="{{ message }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form id="settings-form" method="POST" action="#" onsubmit="return false;">
+        <div class="settings-grid">
+            <!-- Combined Services Card -->
+            <div class="settings-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-cogs"></i> <span data-i18n="Services Configuration">{{ _('Services Configuration') }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- NPM Settings Sub-Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-server"></i> <span data-i18n="Reverse Proxy Settings">{{ _('Reverse Proxy Settings') }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="container-status">
+                                <div class="status-indicator {% if docker_status.npm.running %}status-running{% elif docker_status.npm.installed %}status-installed{% else %}status-not-installed{% endif %}">
+                                    <i class="fas {% if docker_status.npm.running %}fa-circle-check{% elif docker_status.npm.installed %}fa-circle-pause{% else %}fa-circle-xmark{% endif %}"></i>
+                                    <span data-i18n="{% if docker_status.npm.running %}Running{% elif docker_status.npm.installed %}Installed{% else %}Not Installed{% endif %}">
+                                        {% if docker_status.npm.running %}{{ _('Running') }}{% elif docker_status.npm.installed %}{{ _('Installed') }} ({{ _(docker_status.npm.status) }}){% else %}{{ _('Not Installed') }}{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="npm_identity" data-i18n="Identity">{{ _('Identity') }}</label>
+                                <input type="text" id="npm_identity" name="npm_identity" value="{{ npm_config.identity }}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="npm_secret" data-i18n="Secret">{{ _('Secret') }}</label>
+                                <input type="password" id="npm_secret" name="npm_secret" value="{{ npm_config.secret }}" required>
+                            </div>
+                            <input type="hidden" id="npm_domain" name="npm_domain" value="npm:81">
+                            <div class="form-actions">
+                                <button type="button" id="deploy-npm" class="btn primary" {% if docker_status.npm.installed %}disabled{% endif %}>
+                                    <i class="fas fa-server"></i> 
+                                    <span data-i18n="{% if docker_status.npm.installed %}Already Installed{% else %}Install Reverse Proxy{% endif %}">
+                                        {% if docker_status.npm.installed %}{{ _('Already Installed') }}{% else %}{{ _('Install Reverse Proxy') }}{% endif %}
+                                    </span>
+                                </button>
+                                {% if docker_status.npm.installed and not docker_status.npm.running %}
+                                <button type="button" id="start-npm" class="btn primary">
+                                    <i class="fas fa-play"></i> <span data-i18n="Start Container">{{ _('Start Container') }}</span>
+                                </button>
+                                {% endif %}
+                                {% if docker_status.npm.running %}
+                                <button type="button" id="stop-npm" class="btn danger">
+                                    <i class="fas fa-stop"></i> <span data-i18n="Stop Container">{{ _('Stop Container') }}</span>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- WireGuard VPN Settings Sub-Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-shield-alt"></i> <span data-i18n="WireGuard Settings">{{ _('WireGuard VPN Settings') }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="container-status">
+                                <div class="status-indicator {% if docker_status.wireguard.running %}status-running{% elif docker_status.wireguard.installed %}status-installed{% else %}status-not-installed{% endif %}">
+                                    <i class="fas {% if docker_status.wireguard.running %}fa-circle-check{% elif docker_status.wireguard.installed %}fa-circle-pause{% else %}fa-circle-xmark{% endif %}"></i>
+                                    <span data-i18n="{% if docker_status.wireguard.running %}Running{% elif docker_status.wireguard.installed %}Installed{% else %}Not Installed{% endif %}">
+                                        {% if docker_status.wireguard.running %}{{ _('Running') }}{% elif docker_status.wireguard.installed %}{{ _('Installed') }} ({{ _(docker_status.wireguard.status) }}){% else %}{{ _('Not Installed') }}{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="wg_public_ip" data-i18n="Public IP Address">{{ _('Public IP Address') }}</label>
+                                <input type="text" id="wg_public_ip" name="wg_public_ip" placeholder="e.g. 123.456.789.0" required>
+                                <small class="form-hint" data-i18n="Public IP Address Hint">{{ _('The public IP address clients will connect to') }}</small>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" id="deploy-wireguard" class="btn primary" {% if docker_status.wireguard.installed %}disabled{% endif %}>
+                                    <i class="fas fa-shield-alt"></i> 
+                                    <span data-i18n="{% if docker_status.wireguard.installed %}Already Installed{% else %}Install WireGuard VPN Server{% endif %}">
+                                        {% if docker_status.wireguard.installed %}{{ _('Already Installed') }}{% else %}{{ _('Install WireGuard VPN Server') }}{% endif %}
+                                    </span>
+                                </button>
+                                {% if docker_status.wireguard.installed and not docker_status.wireguard.running %}
+                                <button type="button" id="start-wireguard" class="btn primary">
+                                    <i class="fas fa-play"></i> <span data-i18n="Start Container">{{ _('Start Container') }}</span>
+                                </button>
+                                {% endif %}
+                                {% if docker_status.wireguard.running %}
+                                <button type="button" id="stop-wireguard" class="btn danger">
+                                    <i class="fas fa-stop"></i> <span data-i18n="Stop Container">{{ _('Stop Container') }}</span>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Log Settings Sub-Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-file-alt"></i> <span data-i18n="Log Settings">{{ _('Log Settings') }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3 data-i18n="Log Files">{{ _('Log Files') }}</h3>
+                            <div id="logfiles-container">
+                                {% for logfile in logfiles %}
+                                <div class="logfile-row">
+                                    <div class="form-group inline">
+                                        <label for="log_path_{{ loop.index }}" data-i18n="Path">{{ _('Path') }}</label>
+                                        <input type="text" id="log_path_{{ loop.index }}" name="log_path[]" value="{{ logfile.path }}" required>
+                                    </div>
+                                    <button type="button" class="btn-icon remove-logfile" data-i18n-title="Remove logfile" title="{{ _('Remove logfile') }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" id="add-logfile" class="btn primary">
+                                    <i class="fas fa-plus"></i> <span data-i18n="Add Log File">{{ _('Add Log File') }}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Services Configuration Save Button positioned outside card-body but inside settings-card -->
+                <div class="form-actions settings-save-actions">
+                    <button type="button" id="save-services" class="btn primary" data-i18n="Save Services Configuration">
+                        <i class="fas fa-save"></i> <span data-i18n="Save Services Configuration">{{ _('Save Services Configuration') }}</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Combined User Preferences Card -->
+            <div class="settings-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-user-cog"></i> <span data-i18n="User Preferences">{{ _('User Preferences') }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Timezone Settings Sub-Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-cog"></i> <span data-i18n="General Settings">{{ _('General Settings') }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="timezone" data-i18n="Timezone">{{ _('Timezone') }}</label>
+                                <select id="timezone" name="timezone">
+                                    <optgroup label="Common">
+                                        <option value="UTC" {% if timezone == 'UTC' %}selected{% endif %}>UTC (Coordinated Universal Time)</option>
+                                        <option value="GMT" {% if timezone == 'GMT' %}selected{% endif %}>GMT (Greenwich Mean Time)</option>
+                                        <option value="Europe/London" {% if timezone == 'Europe/London' %}selected{% endif %}>London (GMT/BST)</option>
+                                        <option value="Europe/Paris" {% if timezone == 'Europe/Paris' %}selected{% endif %}>Paris (CET/CEST)</option>
+                                        <option value="Europe/Berlin" {% if timezone == 'Europe/Berlin' %}selected{% endif %}>Berlin (CET/CEST)</option>
+                                        <option value="Europe/Moscow" {% if timezone == 'Europe/Moscow' %}selected{% endif %}>Moscow (MSK)</option>
+                                        <option value="America/New_York" {% if timezone == 'America/New_York' %}selected{% endif %}>New York (EST/EDT)</option>
+                                        <option value="America/Chicago" {% if timezone == 'America/Chicago' %}selected{% endif %}>Chicago (CST/CDT)</option>
+                                        <option value="America/Denver" {% if timezone == 'America/Denver' %}selected{% endif %}>Denver (MST/MDT)</option>
+                                        <option value="America/Los_Angeles" {% if timezone == 'America/Los_Angeles' %}selected{% endif %}>Los Angeles (PST/PDT)</option>
+                                        <option value="Asia/Tokyo" {% if timezone == 'Asia/Tokyo' %}selected{% endif %}>Tokyo (JST)</option>
+                                        <option value="Asia/Shanghai" {% if timezone == 'Asia/Shanghai' %}selected{% endif %}>Shanghai (CST)</option>
+                                        <option value="Australia/Sydney" {% if timezone == 'Australia/Sydney' %}selected{% endif %}>Sydney (AEST/AEDT)</option>
+                                    </optgroup>
+                                    
+                                    {% set region = '' %}
+                                    {% for tz in all_timezones %}
+                                        {% set current_region = tz.split('/')[0] if '/' in tz else 'Other' %}
+                                        
+                                        {% if current_region != region %}
+                                            {% if region != '' %}
+                                                </optgroup>
+                                            {% endif %}
+                                            <optgroup label="{{ current_region }}">
+                                            {% set region = current_region %}
+                                        {% endif %}
+                                        
+                                        <option value="{{ tz }}" {% if timezone == tz and tz not in ['UTC', 'GMT', 'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Moscow', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Asia/Tokyo', 'Asia/Shanghai', 'Australia/Sydney'] %}selected{% endif %}>
+                                            {{ tz }}
+                                        </option>
+                                    {% endfor %}
+                                    </optgroup>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="primary_color" data-i18n="Primary Color">{{ _('Primary Color') }}</label>
+                                <div class="color-picker-container">
+                                    <input type="color" id="primary_color" name="primary_color" value="{{ primary_color }}">
+                                    <button type="button" id="reset_color" class="btn small" data-i18n="Reset to Default">{{ _('Reset to Default') }}</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Account Settings Sub-Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-user-shield"></i> <span data-i18n="Account Settings">{{ _('Account Settings') }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="user_email" data-i18n="Email Address">{{ _('Email Address') }}</label>
+                                <input type="email" id="user_email" name="user_email" value="{{ current_user.email }}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="current_password" data-i18n="Current Password">{{ _('Current Password') }}</label>
+                                <input type="password" id="current_password" name="current_password" data-i18n-placeholder="Enter current password" placeholder="{{ _('Enter current password') }}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="user_password" data-i18n="New Password">{{ _('New Password') }}</label>
+                                <input type="password" id="user_password" name="user_password" data-i18n-placeholder="Enter new password" placeholder="{{ _('Enter new password') }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirm_password" data-i18n="Confirm Password">{{ _('Confirm Password') }}</label>
+                                <input type="password" id="confirm_password" name="confirm_password" data-i18n-placeholder="Confirm new password" placeholder="{{ _('Confirm new password') }}">
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" id="update-user" class="btn primary">
+                                    <i class="fas fa-user-edit"></i> <span data-i18n="Update Credentials">{{ _('Update Credentials') }}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- User Preferences Save Button positioned outside card-body but inside settings-card -->
+                <div class="form-actions settings-save-actions">
+                    <button type="button" id="save-preferences" class="btn primary" data-i18n="Save User Preferences">
+                        <i class="fas fa-save"></i> <span data-i18n="Save User Preferences">{{ _('Save User Preferences') }}</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- User Management Card -->
+            <div class="settings-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-users"></i> <span data-i18n="User Management">{{ _('User Management') }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h3 data-i18n="Users">{{ _('Users') }}</h3>
+                    <div id="users-container">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i> <span data-i18n="Loading Users...">{{ _('Loading Users...') }}</span>
+                        </div>
+                        <!-- Users will be loaded here via JavaScript -->
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="add-user" class="btn primary">
+                            <i class="fas fa-user-plus"></i> <span data-i18n="Add User">{{ _('Add User') }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Session Management Card -->
+            <div class="settings-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-shield-alt"></i> <span data-i18n="Session Management">{{ _('Session Management') }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h3 data-i18n="Active Sessions">{{ _('Active Sessions') }}</h3>
+                    <div id="sessions-container">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i> <span data-i18n="Loading Sessions...">{{ _('Loading Sessions...') }}</span>
+                        </div>
+                        <!-- Sessions will be loaded here via JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-actions no-frame">
+            <!-- Remove the global save button that was here -->
+        </div>
+    </form>
+</div>
+
+<!-- Confirmation Modal for Container Actions -->
+<div id="confirmationModal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 id="confirmModalTitle" data-i18n="Confirm Action">{{ _('Confirm Action') }}</h3>
+            <button id="closeConfirmModalBtn" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmModalMessage" data-i18n="Are you sure you want to perform this action?">{{ _('Are you sure you want to perform this action?') }}</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" id="confirmModalCancelBtn" class="btn danger" data-i18n="Cancel">
+                {{ _('Cancel') }}
+            </button>
+            <button type="button" id="confirmModalActionBtn" class="btn primary" data-i18n="Confirm">
+                {{ _('Confirm') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- User Modal for Adding/Editing Users -->
+<div id="userModal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 id="userModalTitle" data-i18n="Add New User">{{ _('Add New User') }}</h3>
+            <button id="closeUserModalBtn" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="user_modal_email" data-i18n="Email Address">{{ _('Email Address') }}</label>
+                <input type="email" id="user_modal_email" name="user_modal_email" data-i18n-placeholder="Enter email address" placeholder="{{ _('Enter email address') }}" required>
+            </div>
+            <div class="form-group">
+                <label for="user_modal_password" data-i18n="Password">{{ _('Password') }}</label>
+                <input type="password" id="user_modal_password" name="user_modal_password" data-i18n-placeholder="Enter password" placeholder="{{ _('Enter password') }}" required>
+            </div>
+            <div class="form-group">
+                <label for="user_modal_confirm_password" data-i18n="Confirm Password">{{ _('Confirm Password') }}</label>
+                <input type="password" id="user_modal_confirm_password" name="user_modal_confirm_password" data-i18n-placeholder="Confirm password" placeholder="{{ _('Confirm password') }}" required>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" id="userModalCancelBtn" class="btn danger" data-i18n="Cancel">
+                {{ _('Cancel') }}
+            </button>
+            <button type="button" id="userModalActionBtn" class="btn primary" data-i18n="Add User">
+                {{ _('Add User') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Password Change Modal -->
+<div id="passwordModal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 id="passwordModalTitle" data-i18n="Change Password">{{ _('Change Password') }}</h3>
+            <button id="closePasswordModalBtn" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="password_modal_password" data-i18n="New Password">{{ _('New Password') }}</label>
+                <input type="password" id="password_modal_password" name="password_modal_password" data-i18n-placeholder="Enter new password" placeholder="{{ _('Enter new password') }}" required>
+            </div>
+            <div class="form-group">
+                <label for="password_modal_confirm" data-i18n="Confirm Password">{{ _('Confirm Password') }}</label>
+                <input type="password" id="password_modal_confirm" name="password_modal_confirm" data-i18n-placeholder="Confirm new password" placeholder="{{ _('Confirm new password') }}" required>
+            </div>
+            <input type="hidden" id="password_modal_user_id" value="">
+        </div>
+        <div class="modal-footer">
+            <button type="button" id="passwordModalCancelBtn" class="btn danger" data-i18n="Cancel">
+                {{ _('Cancel') }}
+            </button>
+            <button type="button" id="passwordModalActionBtn" class="btn primary" data-i18n="Change Password">
+                {{ _('Change Password') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='animations.js') }}"></script>
+<!-- notifications.js is already loaded in base.html -->
+<script src="{{ url_for('static', filename='settingsTranslations.js') }}"></script>
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+
+<!-- Mode Toggle Button -->
+<button class="mode-toggle" id="modeToggle" title="{{ _('Toggle light/dark mode') }}">
+    <span class="bulb-icon">💡</span>
+</button>
+{% endblock %} 
