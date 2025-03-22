@@ -1,0 +1,390 @@
+<!-- templates/npm.html -->
+{% extends "base.html" %} {% block title %}{{ _('Nginx Proxy Manager') }} | {{ _('Dashboard') }}{% endblock %} 
+{% block head %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/npm-manager.css') }}">
+{% endblock %}
+{% block content %}
+    <div class="hexagons" id="hexagon-container"></div>
+    <div class="npm-container">
+        <!-- Sidebar Navigation -->
+        <div
+            class="npm-sidebar"
+            id="npmSidebar"
+        >
+            <div class="sidebar-group">
+                <div class="sidebar-header">
+                    <span class="sidebar-icon">🌐</span>
+                    <span>{{ _('Hosts') }}</span>
+                </div>
+                <div class="sidebar-items" id="hosts">
+                    <a href="#proxy" class="sidebar-item active">{{ _('Proxy Hosts') }}</a>
+                    <a href="#redirection" class="sidebar-item">{{ _('Redirection Hosts') }}</a>
+                </div>
+            </div>
+    
+            <div class="sidebar-group">
+                <div class="sidebar-header">
+                    <span class="sidebar-icon">🔒</span>
+                    <span>{{ _('Security') }}</span>
+                </div>
+                <div class="sidebar-items" id="security">
+                    <a href="#access" class="sidebar-item">{{ _('Access Lists') }}</a>
+                    <a href="#certificates" class="sidebar-item">{{ _('Certificates') }}</a>
+                </div>
+            </div>
+            
+            <div class="sidebar-group">
+                <div class="sidebar-header">
+                    <span class="sidebar-icon">⚙️</span>
+                    <span>{{ _('System') }}</span>
+                </div>
+                <div class="sidebar-items" id="system">
+                    <a href="#audit" class="sidebar-item">{{ _('Audit Log') }}</a>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Main Content Area -->
+        <div class="npm-content">
+            <!-- Dynamic Content Views -->
+            <div id="proxyView" class="content-view active">
+                <div class="view-header">
+                    <h1 id="currentViewTitle">{{ _('Proxy Hosts') }}</h1>
+                </div>
+                
+                <div class="action-bar">
+                    <div class="search-bar">
+                        <input type="text" id="searchInput" placeholder="{{ _('Search...') }}" />
+                    </div>
+                    <button class="add-new-btn btn primary" id="addProxyHostBtn">
+                        <i class="fas fa-plus"></i> {{ _('Add Proxy Host') }}
+                    </button>
+                </div>
+                
+                <div class="card-grid" id="proxyHostsGrid"></div>
+            </div>
+    
+            <div id="redirectionView" class="content-view">
+                <div class="view-header">
+                    <h1>{{ _('Redirection Hosts') }}</h1>
+                </div>
+                
+                <div class="action-bar">
+                    <div class="search-bar">
+                        <input type="text" id="searchRedirectionInput" placeholder="{{ _('Search...') }}" />
+                    </div>
+                    <button class="add-new-btn btn primary" id="addRedirectionHostBtn">
+                        <i class="fas fa-plus"></i> {{ _('Add Redirection Host') }}
+                    </button>
+                </div>
+                
+                <div class="card-grid" id="redirectionHostsGrid"></div>
+            </div>
+    
+            <div id="accessView" class="content-view">
+                <div class="view-header">
+                    <h1>{{ _('Access Lists') }}</h1>
+                </div>
+                
+                <div class="action-bar">
+                    <div class="search-bar">
+                        <input type="text" id="searchAccessInput" placeholder="{{ _('Search...') }}" />
+                    </div>
+                    <button class="add-new-btn btn primary" id="addAccessListBtn">
+                        <i class="fas fa-plus"></i> {{ _('Add Access List') }}
+                    </button>
+                </div>
+                
+                <div class="card-grid" id="accessListsGrid"></div>
+            </div>
+    
+            <div id="certificatesView" class="content-view">
+                <div class="view-header">
+                    <h1>{{ _('Certificates') }}</h1>
+                </div>
+                
+                <div class="action-bar">
+                    <div class="search-bar">
+                        <input type="text" id="searchCertificateInput" placeholder="{{ _('Search...') }}" />
+                    </div>
+                    <button class="add-new-btn btn primary" id="addCertificateBtn">
+                        <i class="fas fa-plus"></i> {{ _('Add Certificate') }}
+                    </button>
+                </div>
+                
+                <!-- Certificate stats -->
+                <div class="cert-stats">
+                    <div class="stat-card">
+                        <h3>{{ _('Valid Certificates') }}</h3>
+                        <span id="validCertsCount">0</span>
+                    </div>
+                    <div class="stat-card warning">
+                        <h3>{{ _('Expiring Soon') }}</h3>
+                        <span id="expiringSoonCount">0</span>
+                    </div>
+                    <div class="stat-card danger">
+                        <h3>{{ _('Expired') }}</h3>
+                        <span id="expiredCount">0</span>
+                    </div>
+                </div>
+                
+                <div class="card-grid" id="certificatesGrid"></div>
+            </div>
+    
+            <div id="auditView" class="content-view">
+                <div class="view-header">
+                    <h1>{{ _('Audit Log') }}</h1>
+                </div>
+                
+                <div class="action-bar">
+                    <div class="search-bar">
+                        <input type="text" id="searchAuditInput" placeholder="{{ _('Search...') }}" />
+                    </div>
+                </div>
+                
+                <div class="audit-log-container">
+                    <table id="auditLogTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>{{ _('Timestamp') }}</th>
+                                <th>{{ _('User') }}</th>
+                                <th>{{ _('Action') }}</th>
+                                <th>{{ _('Details') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Audit log entries injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mode Toggle Button -->
+    <button class="mode-toggle" id="modeToggle" title="{{ _('Toggle light/dark mode') }}">
+        <span class="bulb-icon">💡</span>
+    </button>
+    
+    <!-- Modals -->
+    <!-- Proxy Host Modal -->
+    <div id="addHostModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>{{ _('Proxy Host') }}</h2>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addHostForm">
+                    <!-- Form fields will be dynamically populated by ProxyHostModals.js -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <!-- Footer buttons will be added dynamically -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Redirection Host Modal -->
+    <div id="redirectionHostModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>{{ _('Redirection Host') }}</h2>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="redirectionHostForm">
+                    <!-- Form fields will be dynamically populated by RedirectionHostModals.js -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <!-- Footer buttons will be added dynamically -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Access List Modal -->
+    <div id="accessListModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>{{ _('Add Access List') }}</h2>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="accessListForm">
+                    <!-- Form fields will be dynamically populated by AccessListModals.js -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <!-- Footer buttons will be added dynamically -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Certificate Modal -->
+    <div id="certificateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>{{ _('Add Certificate') }}</h2>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="certificateForm">
+                    <!-- Form fields will be dynamically populated by CertificateModals.js -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <!-- Footer buttons will be added dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>{{ _('Confirm Deletion') }}</h2>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>{{ _('Are you sure you want to delete this item?') }}</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn danger cancel-delete">{{ _('Cancel') }}</button>
+                <button class="btn primary" id="confirmDeleteBtn">{{ _('Delete') }}</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <!-- Load scripts -->
+    <script src="{{ url_for('static', filename='animations.js') }}"></script>
+    <script src="{{ url_for('static', filename='theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='notifications.js') }}"></script>
+    <script src="{{ url_for('static', filename='translations/js/navigationTranslations.js') }}"></script>
+
+    <!-- NPM-specific JavaScript with type="module" -->
+    <script type="module" src="{{ url_for('static', filename='npm/npm.js') }}"></script>
+    
+    <!-- Apply color synchronization for buttons created dynamically -->
+    <script>
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Apply color synchronization when page loads
+            if (window.syncPrimaryColor) {
+                // Call with a delay to ensure dynamic elements are created
+                setTimeout(window.syncPrimaryColor, 1000);
+            }
+            
+            // Add click handler for buttons that might open modals
+            document.addEventListener('click', function(event) {
+                // Check if a button was clicked
+                if (event.target.tagName === 'BUTTON' || 
+                    event.target.closest('button') ||
+                    event.target.classList.contains('add-new-btn') ||
+                    event.target.closest('.add-new-btn')) {
+                    
+                    // Apply color with short delay to catch newly created elements
+                    setTimeout(function() {
+                        if (window.syncPrimaryColor) {
+                            window.syncPrimaryColor();
+                        }
+                    }, 100);
+                }
+            });
+        });
+        
+        // Expose the npm domain to the JavaScript modules
+        window.npmDomain = "{{ npm_domain }}";
+        
+        // Improved view handling function for translations
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+            
+            // Fix for updating titles when switching views
+            sidebarItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const viewName = this.getAttribute('href').substring(1);
+                    const viewTitle = this.textContent.trim();
+                    
+                    // Update the current view title using the translation function
+                    const currentViewTitle = document.getElementById('currentViewTitle');
+                    if (currentViewTitle && window.t) {
+                        currentViewTitle.textContent = window.t(viewTitle);
+                    }
+                });
+            });
+        
+            // Apply translations to the certificates view elements if they're visible
+            function translateUIElements() {
+                // Translate certificate view elements
+                const certificatesView = document.getElementById('certificatesView');
+                if (certificatesView && window.getComputedStyle(certificatesView).display !== 'none') {
+                    // Apply translations to certificate stats
+                    const validCertHeader = document.querySelector('#certificatesView .stat-card:first-child h3');
+                    if (validCertHeader) validCertHeader.textContent = window.t('Valid Certificates');
+                    
+                    const expiringSoonHeader = document.querySelector('#certificatesView .stat-card.warning h3');
+                    if (expiringSoonHeader) expiringSoonHeader.textContent = window.t('Expiring Soon');
+                    
+                    const expiredHeader = document.querySelector('#certificatesView .stat-card.danger h3');
+                    if (expiredHeader) expiredHeader.textContent = window.t('Expired');
+                    
+                    // Apply translation to Add Certificate button
+                    const addCertBtn = document.getElementById('addCertificateBtn');
+                    if (addCertBtn) addCertBtn.innerHTML = `<i class="fas fa-plus"></i> ${window.t('Add Certificate')}`;
+                }
+                
+                // Translate other add buttons regardless of which view is active
+                const addProxyHostBtn = document.getElementById('addProxyHostBtn');
+                if (addProxyHostBtn) addProxyHostBtn.innerHTML = `<i class="fas fa-plus"></i> ${window.t('Add Proxy Host')}`;
+                
+                const addRedirectionHostBtn = document.getElementById('addRedirectionHostBtn');
+                if (addRedirectionHostBtn) addRedirectionHostBtn.innerHTML = `<i class="fas fa-plus"></i> ${window.t('Add Redirection Host')}`;
+                
+                const addAccessListBtn = document.getElementById('addAccessListBtn');
+                if (addAccessListBtn) addAccessListBtn.innerHTML = `<i class="fas fa-plus"></i> ${window.t('Add Access List')}`;
+                
+                // Also translate view headers
+                document.querySelectorAll('.view-header h1').forEach(header => {
+                    const originalText = header.textContent.trim();
+                    header.textContent = window.t(originalText);
+                });
+                
+                // Translate modal headers
+                document.querySelectorAll('.modal-header h2').forEach(header => {
+                    const originalText = header.textContent.trim();
+                    header.textContent = window.t(originalText);
+                });
+                
+                // Translate navigation elements
+                if (window.updateNavigationTranslations) {
+                    window.updateNavigationTranslations();
+                }
+                
+                // Apply color sync after translations
+                if (window.syncPrimaryColor) {
+                    window.syncPrimaryColor();
+                }
+            }
+            
+            // Expose the function globally for use by the language switcher
+            window.updateNPMTranslations = translateUIElements;
+            
+            // Apply translations immediately on page load
+            setTimeout(translateUIElements, 100);
+            
+            // Apply translations when the sidebar links are clicked
+            const sidebarLinks = document.querySelectorAll('.sidebar-item');
+            if (sidebarLinks) {
+                sidebarLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        setTimeout(translateUIElements, 100);
+                    });
+                });
+            }
+        });
+    </script>
+{% endblock %}
