@@ -1,0 +1,96 @@
+{{idField}}
+<div class="tabs">
+  <button type="button" class="btn secondary tab-link active" data-tab="general">${window.t('General')}</button>
+</div>
+<div class="tab-content" id="generalTab">
+  <div class="form-group">
+    <label for="domain_names">${window.t('Domain Names (comma-separated)')}</label>
+    <input type="text" id="domain_names" name="domain_names" value="{{domainNames}}" required>
+  </div>
+
+  <div class="form-group">
+    <label for="forward_http_code">${window.t('HTTP Redirection Code')}</label>
+    <select id="forward_http_code" name="forward_http_code">
+      <option value="301" {{forward301Selected}}>${window.t('301 (Permanent)')}</option>
+      <option value="302" {{forward302Selected}}>${window.t('302 (Temporary)')}</option>
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <label for="forward_domain_name">${window.t('Forward Domain Name')}</label>
+    <input type="text" id="forward_domain_name" name="forward_domain_name" value="{{forwardDomainName}}" required>
+  </div>
+      
+  <div class="form-group">
+    <label for="forward_scheme">${window.t('Upstream Scheme')}</label>
+    <select id="forward_scheme" name="forward_scheme" required>
+      <option value="http" {{forwardSchemeHttp}}>http</option>
+      <option value="https" {{forwardSchemeHttps}}>https</option>
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <label for="certificate_id">${window.t('Certificate')}</label>
+    <select id="certificate_id" name="certificate_id" required></select>
+  </div>
+
+  <div class="form-group toggle">
+    <label>
+      <span class="toggle-switch">
+        <input type="checkbox" id="preserve_path" name="preserve_path" {{preservePath}}>
+        <span class="slider"></span>
+      </span>
+      <span class="toggle-label">${window.t('Preserve Path')}</span>
+    </label>
+  </div>
+
+  <div class="form-group toggle">
+    <label>
+      <span class="toggle-switch">
+        <input type="checkbox" id="block_exploits" name="block_exploits" {{blockExploits}}>
+        <span class="slider"></span>
+      </span>
+      <span class="toggle-label">${window.t('Block Common Exploits')}</span>
+    </label>
+  </div>
+
+  <div class="form-group toggle">
+    <label>
+      <span class="toggle-switch">
+        <input type="checkbox" id="ssl_forced" name="ssl_forced" {{sslForced}}>
+        <span class="slider"></span>
+      </span>
+      <span class="toggle-label">${window.t('Force SSL')}</span>
+    </label>
+  </div>
+
+  <div class="form-group toggle">
+    <label>
+      <span class="toggle-switch">
+        <input type="checkbox" id="http2_support" name="http2_support" {{http2Support}}>
+        <span class="slider"></span>
+      </span>
+      <span class="toggle-label">${window.t('HTTP/2 Support')}</span>
+    </label>
+  </div>
+
+  <div class="form-group toggle">
+    <label>
+      <span class="toggle-switch">
+        <input type="checkbox" id="hsts_enabled" name="hsts_enabled" {{hstsEnabled}}>
+        <span class="slider"></span>
+      </span>
+      <span class="toggle-label">${window.t('HSTS Enabled')}</span>
+    </label>
+  </div>
+
+  <div class="form-group toggle">
+    <label>
+      <span class="toggle-switch">
+        <input type="checkbox" id="hsts_subdomains" name="hsts_subdomains" {{hstsSubdomains}}>
+        <span class="slider"></span>
+      </span>
+      <span class="toggle-label">${window.t('HSTS Subdomains')}</span>
+    </label>
+  </div>
+</div>
