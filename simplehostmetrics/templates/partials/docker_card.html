@@ -1,0 +1,27 @@
+<div class="card docker-card full-width">
+    <h2 class="card-title">{{ _('Docker Containers') }}</h2>
+    <button
+        class="btn primary"
+        id="checkAllBtn"
+        style="margin-bottom: 1rem"
+        onclick="checkAllUpdates()"
+        data-i18n="Check for updates"
+        title="{{ _('Check for updates') }}"
+    >
+        ↻ {{ _('Check for updates') }}
+    </button>
+    <div class="docker-container">
+        <table class="docker-table">
+            <thead>
+                <tr>
+                    <th>{{ _('Status') }}</th>
+                    <th>{{ _('Name') }}</th>
+                    <th>{{ _('Uptime') }}</th>
+                    <th>{{ _('Image') }}</th>
+                    <th>{{ _('Actions') }}</th>
+                </tr>
+            </thead>
+            <tbody id="docker-data"></tbody>
+        </table>
+    </div>
+</div>
