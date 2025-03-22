@@ -1,0 +1,21 @@
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fas fa-memory"></i> {{ _('RAM') }}
+        </div>
+        <div class="card-actions">
+            <button class="btn-icon"><i class="fas fa-expand"></i></button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="metric-value" id="memoryOverlay">0 GB</div>
+        <div class="metric-label">{{ _('Used') }}</div>
+        <div class="chart-container">
+            <canvas id="memoryChart"></canvas>
+        </div>
+    </div>
+    <div class="detail-view" id="memory-detail-view">
+        <div class="graph-label">{{ _('24hr RAM Usage') }}</div>
+        <canvas id="memoryDetailChart"></canvas>
+    </div>
+</div>
