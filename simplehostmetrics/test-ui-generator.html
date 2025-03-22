@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test UI Examples Generator</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .component-example {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+    <!-- First load the generator -->
+    <script src="/static/js/generate-ui-examples.js"></script>
+    <!-- Then load the test script -->
+    <script src="/static/js/test-ui-generator.js"></script>
+</head>
+<body>
+    <h1>Test UI Examples Generator</h1>
+    <p>This page tests whether the UI Examples Generator correctly identifies button styles in the CSS.</p>
+    
+    <div id="test-results">Loading test results...</div>
+    
+    <h2>Manual Test</h2>
+    <p>Below is a rendering of examples based on the actual CSS:</p>
+    
+    <div id="component-examples" class="component-example">
+        <div class="loading">Loading UI examples...</div>
+    </div>
+    
+    <script>
+        // Initialize generator with actual CSS
+        document.addEventListener('DOMContentLoaded', async () => {
+            const generator = await new UIExamplesGenerator().init();
+            document.getElementById('component-examples').innerHTML = generator.generateAllExamples();
+        });
+    </script>
+</body>
+</html> 
