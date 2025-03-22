@@ -1,0 +1,352 @@
+/**
+ * UI Component Examples Generator
+ * Optimized to show only components used in SimpleHostMetrics application
+ */
+
+// Utility function for throttling (limit how often a function is called)
+function throttle(callback, limit) {
+    let waiting = false;
+    return function() {
+        if (!waiting) {
+            callback.apply(this, arguments);
+            waiting = true;
+            setTimeout(() => {
+                waiting = false;
+            }, limit);
+        }
+    };
+}
+
+// Utility function for debouncing (only execute after a pause)
+function debounce(callback, delay) {
+    let timer;
+    return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            callback.apply(context, args);
+        }, delay);
+    };
+}
+
+class UIExamplesGenerator {
+    constructor() {
+        this.cssRules = [];
+        this.buttonClasses = {
+            primary: [],
+            secondary: [],
+            danger: [],
+            icon: []
+        };
+        this.cardClasses = {
+            basic: [],
+            header: [],
+            body: []
+        };
+        this.alertClasses = {
+            info: [],
+            warning: [],
+            error: [],
+            success: []
+        };
+        this.formClasses = {
+            inputs: [],
+            selects: [],
+            toggles: []
+        };
+    }
+
+    /**
+     * Initialize the generator
+     */
+    async init() {
+        try {
+            // Create a temporary link element to load and parse CSS
+            await this.loadStylesheetEfficient('/static/style.css');
+            this.extractComponentClasses();
+            return this;
+        } catch (error) {
+            console.error('Error initializing UI generator:', error);
+            return this;
+        }
+    }
+
+    /**
+     * Load a stylesheet and parse its rules using browser's native CSS API
+     */
+    async loadStylesheetEfficient(href) {
+        return new Promise((resolve, reject) => {
+            // Check if the stylesheet is already loaded in the document
+            for (let i = 0; i < document.styleSheets.length; i++) {
+                const sheet = document.styleSheets[i];
+                if (sheet.href && sheet.href.includes(href.substring(1))) {
+                    try {
+                        this.parseStylesheet(sheet);
+                        console.log(`Used existing stylesheet: ${href}`);
+                        return resolve(true);
+                    } catch (err) {
+                        // If there's a CORS issue, we'll try the fetch approach as fallback
+                        console.warn('Could not access rules in existing stylesheet (CORS issue):', err);
+                        break;
+                    }
+                }
+            }
+
+            // If stylesheet not already accessible, fetch it
+            fetch(href)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to load stylesheet: ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(cssText => {
+                    // Create a temporary style element
+                    const style = document.createElement('style');
+                    style.textContent = cssText;
+                    style.setAttribute('data-debug-temp', 'true');
+                    document.head.appendChild(style);
+
+                    // Get the stylesheet from the style element we just added
+                    const sheet = style.sheet;
+                    this.parseStylesheet(sheet);
+                    
+                    console.log(`Loaded stylesheet dynamically: ${href}`);
+                    resolve(true);
+                })
+                .catch(error => {
+                    console.error('Error loading stylesheet:', error);
+                    reject(error);
+                });
+        });
+    }
+
+    /**
+     * Parse a CSSStyleSheet object efficiently
+     */
+    parseStylesheet(sheet) {
+        try {
+            // Use browser's built-in CSS parsing
+            const rules = sheet.cssRules || sheet.rules;
+            for (let i = 0; i < rules.length; i++) {
+                const rule = rules[i];
+                
+                // Only process style rules (not @media, @keyframes, etc)
+                if (rule.type === 1) { // CSSRule.STYLE_RULE
+                    this.cssRules.push({
+                        selector: rule.selectorText,
+                        styles: rule.style.cssText
+                    });
+                }
+            }
+            console.log(`Parsed ${this.cssRules.length} CSS rules`);
+        } catch (error) {
+            console.error('Error parsing stylesheet:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Extract component classes from the parsed CSS
+     */
+    extractComponentClasses() {
+        // Find all relevant component classes
+        for (const rule of this.cssRules) {
+            const selector = rule.selector;
+            
+            // Extract button classes
+            if (selector.includes('.btn') || selector.includes('button:not')) {
+                if (selector.includes('.btn-primary') || selector.includes('.btn.primary')) {
+                    this.buttonClasses.primary.push(selector);
+                }
+                else if (selector.includes('.btn-secondary') || selector.includes('.btn.secondary')) {
+                    this.buttonClasses.secondary.push(selector);
+                }
+                else if (selector.includes('.btn-danger') || selector.includes('.btn.danger')) {
+                    this.buttonClasses.danger.push(selector);
+                }
+                else if (selector.includes('.btn-icon')) {
+                    this.buttonClasses.icon.push(selector);
+                }
+            }
+            
+            // Extract card classes
+            if (selector.includes('.card')) {
+                this.cardClasses.basic.push(selector);
+            }
+            if (selector.includes('.card-header')) {
+                this.cardClasses.header.push(selector);
+            }
+            if (selector.includes('.card-body')) {
+                this.cardClasses.body.push(selector);
+            }
+            
+            // Extract alert classes
+            if (selector.includes('.alert')) {
+                if (selector.includes('.alert-info') || selector.includes('.alert.info')) {
+                    this.alertClasses.info.push(selector);
+                }
+                else if (selector.includes('.alert-warning') || selector.includes('.alert.warning')) {
+                    this.alertClasses.warning.push(selector);
+                }
+                else if (selector.includes('.alert-error') || selector.includes('.alert.error')) {
+                    this.alertClasses.error.push(selector);
+                }
+                else if (selector.includes('.alert-success') || selector.includes('.alert.success')) {
+                    this.alertClasses.success.push(selector);
+                }
+            }
+            
+            // Extract form classes
+            if (selector.includes('input') || selector.includes('.form-control')) {
+                this.formClasses.inputs.push(selector);
+            }
+            if (selector.includes('select')) {
+                this.formClasses.selects.push(selector);
+            }
+            if (selector.includes('.toggle-switch') || selector.includes('.toggle')) {
+                this.formClasses.toggles.push(selector);
+            }
+        }
+
+        console.log('Extracted component classes:', {
+            buttons: this.buttonClasses,
+            cards: this.cardClasses,
+            alerts: this.alertClasses,
+            forms: this.formClasses
+        });
+    }
+
+    /**
+     * Generate HTML for all examples
+     */
+    generateAllExamples() {
+        const container = document.getElementById('component-examples');
+        if (!container) return;
+        
+        // Clear loading message
+        container.innerHTML = '';
+        
+        // Add only components used in the application
+        container.innerHTML += this.generateButtonExamples();
+        container.innerHTML += this.generateAlertExamples();
+        container.innerHTML += this.generateFormExamples();
+    }
+
+    /**
+     * Generate HTML for button examples
+     */
+    generateButtonExamples() {
+        let html = `
+        <div class="component-section">
+            <h3>Buttons</h3>
+            <p>Buttons used in SimpleHostMetrics application:</p>
+            <div class="component-example">
+                <h4>Standard Buttons</h4>
+                <div class="button-group">
+                    <button class="btn primary">Primary Button</button>
+                    <button class="btn secondary">Secondary Button</button>
+                    <button class="btn danger">Danger Button</button>
+                </div>
+                
+                <h4>Icon Buttons</h4>
+                <div class="button-group">
+                    <button class="btn-icon"><i class="fas fa-cog"></i></button>
+                    <button class="btn-icon"><i class="fas fa-sync"></i></button>
+                    <button class="btn-icon outline"><i class="fas fa-trash"></i></button>
+                </div>
+                
+                <h4>Buttons with Icons</h4>
+                <div class="button-group">
+                    <button class="btn primary"><i class="fas fa-save mr-2"></i>Save</button>
+                    <button class="btn secondary"><i class="fas fa-sync mr-2"></i>Refresh</button>
+                    <button class="btn danger"><i class="fas fa-trash mr-2"></i>Delete</button>
+                </div>
+            </div>
+        </div>`;
+        
+        return html;
+    }
+    
+    /**
+     * Generate HTML for alert examples
+     */
+    generateAlertExamples() {
+        let html = `
+        <div class="component-section">
+            <h3>Alerts</h3>
+            <p>Alert messages used in SimpleHostMetrics:</p>
+            <div class="component-example">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> This is an information alert.
+                </div>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> This is a warning alert.
+                </div>
+                <div class="alert alert-error">
+                    <i class="fas fa-times-circle"></i> This is an error alert.
+                </div>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> This is a success alert.
+                </div>
+            </div>
+        </div>`;
+        
+        return html;
+    }
+    
+    /**
+     * Generate HTML for form examples
+     */
+    generateFormExamples() {
+        let html = `
+        <div class="component-section">
+            <h3>Form Elements</h3>
+            <p>Form controls used in SimpleHostMetrics:</p>
+            <div class="component-example">
+                <div class="form-group">
+                    <label for="text-input">Text Input</label>
+                    <input type="text" id="text-input" class="form-control" placeholder="Enter text">
+                </div>
+                
+                <div class="form-group">
+                    <label for="select-input">Select Input</label>
+                    <select id="select-input" class="form-control">
+                        <option value="">Select an option</option>
+                        <option value="1">Option 1</option>
+                        <option value="2">Option 2</option>
+                    </select>
+                </div>
+                
+                <div class="form-group toggle">
+                    <span>Toggle Switch</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>`;
+        
+        return html;
+    }
+
+    /**
+     * Apply the examples to the page
+     */
+    applyExamples() {
+        this.generateAllExamples();
+    }
+}
+
+// Initialize on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Check if we're on the debug page with the examples container
+    if (document.getElementById('component-examples')) {
+        const generator = new UIExamplesGenerator();
+        generator.init().then(() => {
+            generator.applyExamples();
+        });
+    }
+}); 
