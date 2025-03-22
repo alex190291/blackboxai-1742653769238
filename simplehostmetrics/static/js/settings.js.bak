@@ -1,0 +1,1658 @@
+// When translations are loaded, make sure t() is available for notifications
+if (typeof t === 'function' && typeof showNotification === 'function') {
+    console.log("Both translations and notifications loaded correctly");
+} else {
+    console.error("Translations or notifications not loaded correctly:", 
+                 "t function:", typeof t, 
+                 "showNotification:", typeof showNotification);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Activate any flash messages
+    document.querySelectorAll('.flash-message').forEach(function(element) {
+        element.classList.add('show');
+        setTimeout(function() {
+            element.classList.remove('show');
+            setTimeout(function() {
+                element.remove();
+            }, 300);
+        }, 5000);
+    });
+    
+    
+    // Set up color picker functionality
+    const colorPicker = document.getElementById('primary_color');
+    const resetColorBtn = document.getElementById('reset_color');
+    
+    if (colorPicker) {
+        // Set initial color from localStorage or use the default
+        const savedColor = localStorage.getItem('primaryColor') || '#2d5a4f';
+        colorPicker.value = savedColor;
+        
+        // Rate limiting variables
+        let lastUpdate = 0;
+        const UPDATE_INTERVAL = 50; // 10Hz update rate
+        let updateTimeout = null;
+        
+        // Apply color when picker changes with rate limiting
+        colorPicker.addEventListener('input', function() {
+            const now = Date.now();
+            const newColor = this.value;
+            
+            // Clear any pending timeout
+            if (updateTimeout) {
+                clearTimeout(updateTimeout);
+            }
+            
+            // If enough time has passed since last update, update immediately
+            if (now - lastUpdate >= UPDATE_INTERVAL) {
+                savePrimaryColor(newColor);
+                applyPrimaryColor(newColor);
+                lastUpdate = now;
+            } else {
+                // Schedule an update for when the interval has passed
+                updateTimeout = setTimeout(() => {
+                    savePrimaryColor(newColor);
+                    applyPrimaryColor(newColor);
+                    lastUpdate = Date.now();
+                }, UPDATE_INTERVAL - (now - lastUpdate));
+            }
+        });
+        
+        // Apply color when picker value is finalized
+        colorPicker.addEventListener('change', function() {
+            const color = this.value;
+            savePrimaryColor(color);
+            applyPrimaryColor(color);
+            
+            // Force update with syncPrimaryColor to ensure all elements are updated
+            if (window.syncPrimaryColor) {
+                window.syncPrimaryColor();
+            }
+        });
+    }
+    
+    if (resetColorBtn) {
+        resetColorBtn.addEventListener('click', function() {
+            const defaultColor = '#2d5a4f';
+            colorPicker.value = defaultColor;
+            savePrimaryColor(defaultColor);
+            applyPrimaryColor(defaultColor);
+            
+            // Force update with syncPrimaryColor
+            if (window.syncPrimaryColor) {
+                window.syncPrimaryColor();
+            }
+        });
+    }
+    
+    // Modal elements
+    const confirmationModal = document.getElementById('confirmationModal');
+    const confirmModalTitle = document.getElementById('confirmModalTitle');
+    const confirmModalMessage = document.getElementById('confirmModalMessage');
+    const confirmModalActionBtn = document.getElementById('confirmModalActionBtn');
+    const confirmModalCancelBtn = document.getElementById('confirmModalCancelBtn');
+    const closeConfirmModalBtn = document.getElementById('closeConfirmModalBtn');
+    
+    // User Modal elements
+    const userModal = document.getElementById('userModal');
+    const userModalTitle = document.getElementById('userModalTitle');
+    const userModalActionBtn = document.getElementById('userModalActionBtn');
+    const userModalCancelBtn = document.getElementById('userModalCancelBtn');
+    const closeUserModalBtn = document.getElementById('closeUserModalBtn');
+    
+    // Password Modal elements
+    const passwordModal = document.getElementById('passwordModal');
+    const passwordModalTitle = document.getElementById('passwordModalTitle');
+    const passwordModalActionBtn = document.getElementById('passwordModalActionBtn');
+    const passwordModalCancelBtn = document.getElementById('passwordModalCancelBtn');
+    const closePasswordModalBtn = document.getElementById('closePasswordModalBtn');
+    
+    // Close modal functions
+    function closeConfirmModal() {
+        confirmationModal.style.display = 'none';
+    }
+    
+    function closeUserModal() {
+        userModal.style.display = 'none';
+    }
+    
+    function closePasswordModal() {
+        passwordModal.style.display = 'none';
+    }
+    
+    // Setup modal close buttons
+    closeConfirmModalBtn.addEventListener('click', closeConfirmModal);
+    confirmModalCancelBtn.addEventListener('click', closeConfirmModal);
+    closeUserModalBtn.addEventListener('click', closeUserModal);
+    userModalCancelBtn.addEventListener('click', closeUserModal);
+    closePasswordModalBtn.addEventListener('click', closePasswordModal);
+    passwordModalCancelBtn.addEventListener('click', closePasswordModal);
+    
+    // Close modals when clicking outside
+    window.addEventListener('click', function(event) {
+        if (event.target === confirmationModal) {
+            closeConfirmModal();
+        } else if (event.target === userModal) {
+            closeUserModal();
+        } else if (event.target === passwordModal) {
+            closePasswordModal();
+        }
+    });
+    
+    // Add logfile row
+    document.getElementById('add-logfile').addEventListener('click', function() {
+        const container = document.getElementById('logfiles-container');
+        const rowCount = container.querySelectorAll('.logfile-row').length + 1;
+        
+        const row = document.createElement('div');
+        row.className = 'logfile-row';
+        row.innerHTML = `
+            <div class="form-group inline">
+                <label for="log_path_${rowCount}" data-i18n="Path">Path</label>
+                <input type="text" id="log_path_${rowCount}" name="log_path[]" required>
+            </div>
+            <button type="button" class="btn-icon remove-logfile" data-i18n-title="Remove logfile" title="Remove logfile">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        
+        container.appendChild(row);
+        
+        // Update translations for the new row
+        if (typeof updateSettingsTranslations === 'function') {
+            updateSettingsTranslations();
+        }
+    });
+    
+    // Remove logfile row (using event delegation)
+    document.getElementById('logfiles-container').addEventListener('click', function(e) {
+        if (e.target.closest('.remove-logfile')) {
+            const row = e.target.closest('.logfile-row');
+            row.remove();
+        }
+    });
+    
+    // Show confirmation modal
+    function showConfirmModal(title, message, actionText, confirmCallback) {
+        // Set the title and message
+        confirmModalTitle.textContent = title;
+        confirmModalMessage.textContent = message;
+        
+        // Set data-i18n attributes for translation
+        // These strings are already passed through the t() function before being passed to this modal
+        confirmModalTitle.setAttribute('data-i18n', title);
+        confirmModalMessage.setAttribute('data-i18n', message);
+        
+        // Set action button text and translation
+        confirmModalActionBtn.textContent = actionText;
+        confirmModalActionBtn.setAttribute('data-i18n', actionText);
+        
+        // Set up the confirm button
+        confirmModalActionBtn.onclick = function() {
+            closeConfirmModal();
+            confirmCallback();
+        };
+        
+        // Display the modal
+        confirmationModal.style.display = 'flex';
+        
+        // Apply translations for any elements that have data-i18n attributes
+        if (typeof updateSettingsTranslations === 'function') {
+            updateSettingsTranslations();
+        }
+    }
+    
+    // User Management
+    // Load and display users
+    function loadUsers() {
+        const container = document.getElementById('users-container');
+        
+        // Show loading spinner
+        container.innerHTML = `
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i> <span data-i18n="Loading Users...">Loading Users...</span>
+            </div>
+        `;
+        
+        // Fetch users from API
+        fetch('/api/users')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.users.length > 0) {
+                        // Create card layout for users
+                        let html = '<div class="user-cards">';
+                        
+                        // Add card for each user
+                        data.users.forEach(user => {
+                            const statusClass = user.active ? 'active' : 'inactive';
+                            const statusText = user.active ? t('Active') : t('Inactive');
+                            
+                            html += `
+                                <div class="user-card">
+                                    <div class="user-card-content">
+                                        <div class="user-info">
+                                            <div class="user-icon">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                            <div class="user-details">
+                                                <span class="user-email">${user.email}</span>
+                                                <span class="user-status ${statusClass}" data-i18n="${user.active ? 'Active' : 'Inactive'}">${statusText}</span>
+                                            </div>
+                                        </div>
+                                        <div class="user-actions">
+                                            <button type="button" class="btn-icon change-password" 
+                                                data-user-id="${user.id}" 
+                                                data-i18n-title="Change Password" 
+                                                title="${t('Change Password')}">
+                                                <i class="fas fa-key"></i>
+                                            </button>
+                                            <button type="button" class="btn-icon delete-user" 
+                                                data-user-id="${user.id}" 
+                                                data-user-email="${user.email}" 
+                                                data-i18n-title="Delete User" 
+                                                title="${t('Delete User')}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        html += '</div>';
+                        container.innerHTML = html;
+                        
+                        // Add event listeners for action buttons
+                        document.querySelectorAll('.change-password').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const userId = this.getAttribute('data-user-id');
+                                showPasswordModal(userId);
+                            });
+                        });
+                        
+                        document.querySelectorAll('.delete-user').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const userId = this.getAttribute('data-user-id');
+                                const userEmail = this.getAttribute('data-user-email');
+                                
+                                showConfirmModal(
+                                    t('Delete User'),
+                                    t('Are you sure you want to delete user') + ' ' + userEmail + '?',
+                                    t('Delete'),
+                                    function() {
+                                        deleteUser(userId);
+                                    }
+                                );
+                            });
+                        });
+                    } else {
+                        container.innerHTML = `<p data-i18n="No users found.">${t('No users found.')}</p>`;
+                    }
+                } else {
+                    container.innerHTML = `<p class="error" data-i18n="Error loading users.">${t('Error loading users.')}</p>`;
+                    showError(t('Error:') + ' ' + (data.error || t('Unknown error')));
+                }
+                
+                // Apply translations
+                if (typeof updateSettingsTranslations === 'function') {
+                    updateSettingsTranslations();
+                }
+            })
+            .catch(error => {
+                container.innerHTML = `
+                    <div class="error-container">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p class="error" data-i18n="Failed to load users.">${t('Failed to load users.')}</p>
+                        <p class="error-details">${error.message}</p>
+                        <button class="btn secondary retry-btn">
+                            <i class="fas fa-sync"></i> <span data-i18n="Retry">${t('Retry')}</span>
+                        </button>
+                    </div>
+                `;
+                
+                // Add retry button functionality
+                const retryBtn = container.querySelector('.retry-btn');
+                if (retryBtn) {
+                    retryBtn.addEventListener('click', loadUsers);
+                }
+                
+                // Apply translations
+                if (typeof updateSettingsTranslations === 'function') {
+                    updateSettingsTranslations();
+                }
+            });
+    }
+    
+    // Show user modal for adding new user
+    function showUserModal() {
+        // Clear form
+        document.getElementById('user_modal_email').value = '';
+        document.getElementById('user_modal_password').value = '';
+        document.getElementById('user_modal_confirm_password').value = '';
+        
+        // Set title and button text
+        userModalTitle.textContent = t('Add New User');
+        userModalActionBtn.textContent = t('Add User');
+        
+        // Set data-i18n attributes for translation
+        userModalTitle.setAttribute('data-i18n', 'Add New User');
+        userModalActionBtn.setAttribute('data-i18n', 'Add User');
+        
+        // Set action button handler
+        userModalActionBtn.onclick = addUser;
+        
+        // Show modal
+        userModal.style.display = 'flex';
+        
+        // Apply translations
+        if (typeof updateSettingsTranslations === 'function') {
+            updateSettingsTranslations();
+        }
+    }
+    
+    // Show password change modal
+    function showPasswordModal(userId) {
+        // Clear form
+        document.getElementById('password_modal_password').value = '';
+        document.getElementById('password_modal_confirm').value = '';
+        document.getElementById('password_modal_user_id').value = userId;
+        
+        // Set title and button text
+        passwordModalTitle.textContent = t('Change Password');
+        passwordModalActionBtn.textContent = t('Change Password');
+        
+        // Set data-i18n attributes for translation
+        passwordModalTitle.setAttribute('data-i18n', 'Change Password');
+        passwordModalActionBtn.setAttribute('data-i18n', 'Change Password');
+        
+        // Set action button handler
+        passwordModalActionBtn.onclick = changeUserPassword;
+        
+        // Show modal
+        passwordModal.style.display = 'flex';
+        
+        // Apply translations
+        if (typeof updateSettingsTranslations === 'function') {
+            updateSettingsTranslations();
+        }
+    }
+    
+    // Add new user
+    function addUser() {
+        const email = document.getElementById('user_modal_email').value.trim();
+        const password = document.getElementById('user_modal_password').value;
+        const confirmPassword = document.getElementById('user_modal_confirm_password').value;
+        
+        // Validate inputs
+        if (!email) {
+            showError(t('Please enter an email address.'));
+            return;
+        }
+        
+        if (!password) {
+            showError(t('Please enter a password.'));
+            return;
+        }
+        
+        if (password !== confirmPassword) {
+            showError(t('Passwords do not match.'));
+            return;
+        }
+        
+        // Send API request
+        fetch('/api/users', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess(t('User added successfully.'));
+                closeUserModal();
+                loadUsers();
+            } else {
+                showError(t('Error:') + ' ' + (data.error ? t(data.error) : t('Failed to add user.')));
+            }
+        })
+        .catch(error => {
+            console.error('Error adding user:', error);
+            showError(t('Error:') + ' ' + error.message);
+        });
+    }
+    
+    // Delete user
+    function deleteUser(userId) {
+        fetch(`/api/users/${userId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess(t('User deleted successfully.'));
+                loadUsers();
+            } else {
+                showError(t('Error:') + ' ' + (data.error ? t(data.error) : t('Failed to delete user.')));
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting user:', error);
+            showError(t('Error:') + ' ' + error.message);
+        });
+    }
+    
+    // Change user password
+    function changeUserPassword() {
+        const userId = document.getElementById('password_modal_user_id').value;
+        const password = document.getElementById('password_modal_password').value;
+        const confirmPassword = document.getElementById('password_modal_confirm').value;
+        
+        // Validate inputs
+        if (!password) {
+            showError(t('Please enter a new password.'));
+            return;
+        }
+        
+        if (password !== confirmPassword) {
+            showError(t('Passwords do not match.'));
+            return;
+        }
+        
+        // Send API request
+        fetch(`/api/users/${userId}/password`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                password: password
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess(t('Password changed successfully.'));
+                closePasswordModal();
+            } else {
+                showError(t('Error:') + ' ' + (data.error ? t(data.error) : t('Failed to change password.')));
+            }
+        })
+        .catch(error => {
+            console.error('Error changing password:', error);
+            showError(t('Error:') + ' ' + error.message);
+        });
+    }
+    
+    // Show error message
+    function showError(message) {
+        // Just call the global function directly
+        window.showError(message);
+    }
+    
+    // Show success message
+    function showSuccess(message) {
+        // Just call the global function directly
+        window.showSuccess(message);
+    }
+    
+    // Update user credentials
+    document.getElementById('update-user').addEventListener('click', function() {
+        const email = document.getElementById('user_email').value.trim();
+        const currentPassword = document.getElementById('current_password').value;
+        const password = document.getElementById('user_password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        
+        if (!email) {
+            showError(t('Please enter an email address.'));
+            return;
+        }
+        
+        if (!currentPassword) {
+            showError(t('Please enter your current password.'));
+            return;
+        }
+        
+        if (password) {
+            if (password !== confirmPassword) {
+                showError(t('Passwords do not match.'));
+                return;
+            }
+            
+            if (password.length < 8) {
+                showError(t('Password must be at least 8 characters long.'));
+                return;
+            }
+        }
+        
+        fetch('/settings/update-credentials', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_password: password,
+                email: email
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess(t('Credentials updated successfully.'));
+                document.getElementById('current_password').value = '';
+                document.getElementById('user_password').value = '';
+                document.getElementById('confirm_password').value = '';
+            } else {
+                showError(t('Error:') + ' ' + data.error);
+            }
+        })
+        .catch(error => {
+            showError(t('Error:') + ' ' + error);
+        });
+    });
+    
+    // NPM Container Actions
+    // Deploy NPM container
+    document.getElementById('deploy-npm').addEventListener('click', function() {
+        showConfirmModal(
+            t('Deploy Nginx Proxy Manager'),
+            t('Are you sure you want to deploy the Nginx Proxy Manager container?'),
+            t('Deploy'),
+            function() {
+                deployContainer('npm');
+            }
+        );
+    });
+    
+    // Start NPM container
+    const startNpmButton = document.getElementById('start-npm');
+    if (startNpmButton) {
+        startNpmButton.addEventListener('click', function() {
+            startContainer('npm');
+        });
+    }
+    
+    // Stop NPM container
+    const stopNpmButton = document.getElementById('stop-npm');
+    if (stopNpmButton) {
+        stopNpmButton.addEventListener('click', function() {
+            showConfirmModal(
+                t('Stop NPM Container'),
+                t('Are you sure you want to stop the NPM container?'),
+                t('Stop'),
+                function() {
+                    stopContainer('npm');
+                }
+            );
+        });
+    }
+    
+    // WireGuard Container Actions
+    // Deploy WireGuard container
+    document.getElementById('deploy-wireguard').addEventListener('click', function() {
+        const publicIp = document.getElementById('wg_public_ip').value.trim();
+        if (!publicIp) {
+            showError(t('Please enter a public IP address.'));
+            return;
+        }
+        
+        showConfirmModal(
+            t('Deploy WireGuard VPN Server'),
+            t('Are you sure you want to deploy the WireGuard VPN Server container?'),
+            t('Deploy'),
+            function() {
+                deployWireguard(publicIp);
+            }
+        );
+    });
+    
+    // Start WireGuard container
+    const startWireguardButton = document.getElementById('start-wireguard');
+    if (startWireguardButton) {
+        startWireguardButton.addEventListener('click', function() {
+            startContainer('wireguard');
+        });
+    }
+    
+    // Stop WireGuard container
+    const stopWireguardButton = document.getElementById('stop-wireguard');
+    if (stopWireguardButton) {
+        stopWireguardButton.addEventListener('click', function() {
+            showConfirmModal(
+                t('Stop WireGuard Container'),
+                t('Are you sure you want to stop the WireGuard container?'),
+                t('Stop'),
+                function() {
+                    stopContainer('wireguard');
+                }
+            );
+        });
+    }
+    
+    // Container Action Helper Functions
+    // Helper function to deploy NPM container
+    function deployContainer(containerName) {
+        fetch(`/deploy/${containerName}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Use a translatable message format
+                let message = '';
+                if (containerName === 'npm') {
+                    message = t('NPM container deployment initiated successfully.');
+                } else {
+                    message = t('Container deployment initiated successfully.');
+                }
+                showSuccess(message);
+                refreshContainerCard(containerName);
+            } else {
+                showError(t('Error') + ': ' + data.error);
+            }
+        })
+        .catch(error => {
+            showError(t('Error') + ': ' + error);
+        });
+    }
+    
+    // Helper function to deploy WireGuard container
+    function deployWireguard(publicIp) {
+        fetch('/deploy/wireguard', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                public_ip: publicIp
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess(t('WireGuard container deployment initiated successfully.'));
+                refreshContainerCard('wireguard');
+            } else {
+                showError(t('Error') + ': ' + data.error);
+            }
+        })
+        .catch(error => {
+            showError(t('Error') + ': ' + error);
+        });
+    }
+    
+    // Function to specifically update the container status text
+    function updateContainerStatusText(containerName, isRunning, status) {
+        // Find the container card
+        let containerCard = null;
+        
+        // Target the specific service card by finding the nested card with the specific title
+        if (containerName === 'npm') {
+            // Find the card with "Reverse Proxy Settings" title
+            const titleElements = document.querySelectorAll('.card-title span');
+            for (const titleEl of titleElements) {
+                if (titleEl.textContent.includes('Reverse Proxy')) {
+                    containerCard = titleEl.closest('.settings-card');
+                    break;
+                }
+            }
+        } else if (containerName === 'wireguard') {
+            // Find the card with "WireGuard Settings" title
+            const titleElements = document.querySelectorAll('.card-title span');
+            for (const titleEl of titleElements) {
+                if (titleEl.textContent.includes('WireGuard')) {
+                    containerCard = titleEl.closest('.settings-card');
+                    break;
+                }
+            }
+        }
+        
+        if (!containerCard) {
+            console.error('Could not find container card for', containerName);
+            return;
+        }
+        
+        // Find the status indicator and update it
+        const statusIndicator = containerCard.querySelector('.status-indicator');
+        if (statusIndicator) {
+            // Update the indicator class based on state
+            statusIndicator.className = `status-indicator ${
+                isRunning ? 'status-running' : 'status-installed'
+            }`;
+            
+            // Update the icon
+            const icon = statusIndicator.querySelector('i');
+            if (icon) {
+                icon.className = `fas ${
+                    isRunning ? 'fa-circle-check' : 'fa-circle-pause'
+                }`;
+            }
+            
+            // Update the status text - this is the most important part
+            const statusText = statusIndicator.querySelector('span');
+            if (statusText) {
+                if (isRunning) {
+                    statusText.textContent = t('Running');
+                    statusText.setAttribute('data-i18n', 'Running');
+                } else {
+                    const containerStatus = t('Installed');
+                    const statusDetail = status ? ' (' + t(status) + ')' : '';
+                    statusText.textContent = containerStatus + statusDetail;
+                    statusText.setAttribute('data-i18n', 'Installed');
+                }
+            }
+        }
+    }
+    
+    // Helper function to start a container
+    function startContainer(containerName) {
+        console.log(`Starting container: ${containerName}`);
+        fetch(`/container/start/${containerName}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(`Start container response for ${containerName}:`, data);
+            if (data.success) {
+                // Find the container card using container-specific IDs instead of text content
+                let containerCard = null;
+                if (containerName === 'npm') {
+                    // Find the NPM card using the deploy-npm button which has a reliable ID
+                    const deployNpmButton = document.getElementById('deploy-npm');
+                    if (deployNpmButton) {
+                        containerCard = deployNpmButton.closest('.settings-card');
+                        console.log('Found NPM container card using deploy-npm button:', containerCard);
+                    }
+                } else if (containerName === 'wireguard') {
+                    // Find the WireGuard card using the deploy-wireguard button which has a reliable ID
+                    const deployWireguardButton = document.getElementById('deploy-wireguard');
+                    if (deployWireguardButton) {
+                        containerCard = deployWireguardButton.closest('.settings-card');
+                        console.log('Found WireGuard container card using deploy-wireguard button:', containerCard);
+                    }
+                }
+
+                if (containerCard) {
+                    console.log(`Updating status indicator for ${containerName}`);
+                    // Update status indicator
+                    const statusIndicator = containerCard.querySelector('.status-indicator');
+                    if (statusIndicator) {
+                        console.log('Found status indicator, updating...');
+                        statusIndicator.className = 'status-indicator status-running';
+                        const icon = statusIndicator.querySelector('i');
+                        if (icon) {
+                            icon.className = 'fas fa-circle-check';
+                        }
+                        const statusText = statusIndicator.querySelector('span');
+                        if (statusText) {
+                            statusText.textContent = t('Running');
+                            statusText.setAttribute('data-i18n', 'Running');
+                            console.log('Updated status text to Running');
+                        }
+                    } else {
+                        console.log('No status indicator found');
+                    }
+
+                    console.log(`Updating buttons for ${containerName}`);
+                    // Update buttons
+                    const actionsContainer = containerCard.querySelector('.form-actions');
+                    if (actionsContainer) {
+                        console.log('Found actions container');
+                        // Remove start button if it exists
+                        const startButton = containerCard.querySelector(`#start-${containerName}`);
+                        if (startButton) {
+                            console.log('Removing start button');
+                            startButton.remove();
+                        }
+
+                        // Add stop button
+                        const stopButton = document.createElement('button');
+                        stopButton.type = 'button';
+                        stopButton.id = `stop-${containerName}`;
+                        stopButton.className = 'btn danger';
+                        stopButton.innerHTML = '<i class="fas fa-stop"></i> <span data-i18n="Stop Container"></span>';
+                        stopButton.querySelector('span').textContent = t('Stop Container');
+                        
+                        stopButton.addEventListener('click', function() {
+                            showConfirmModal(
+                                t(`Stop ${containerName.toUpperCase()} Container`),
+                                t(`Are you sure you want to stop the ${containerName.toUpperCase()} container?`),
+                                t('Stop'),
+                                function() {
+                                    stopContainer(containerName);
+                                }
+                            );
+                        });
+                        
+                        actionsContainer.appendChild(stopButton);
+                        console.log('Added stop button');
+                    } else {
+                        console.log('No actions container found');
+                    }
+                } else {
+                    console.log(`No container card found for ${containerName}`);
+                }
+
+                // Use a translatable message format
+                let message = '';
+                if (containerName === 'npm') {
+                    message = t('NPM container started successfully.');
+                } else if (containerName === 'wireguard') {
+                    message = t('WireGuard container started successfully.');
+                } else {
+                    message = t('Container started successfully.');
+                }
+                showSuccess(message);
+            } else {
+                showError(t('Error') + ': ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error(`Error starting container ${containerName}:`, error);
+            showError(t('Error') + ': ' + error);
+        });
+    }
+    
+    // Helper function to stop a container
+    function stopContainer(containerName) {
+        console.log(`Stopping container: ${containerName}`);
+        fetch(`/container/stop/${containerName}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(`Stop container response for ${containerName}:`, data);
+            if (data.success) {
+                // Find the container card using container-specific IDs instead of text content
+                let containerCard = null;
+                if (containerName === 'npm') {
+                    // Find the NPM card using the deploy-npm button which has a reliable ID
+                    const deployNpmButton = document.getElementById('deploy-npm');
+                    if (deployNpmButton) {
+                        containerCard = deployNpmButton.closest('.settings-card');
+                        console.log('Found NPM container card using deploy-npm button:', containerCard);
+                    }
+                } else if (containerName === 'wireguard') {
+                    // Find the WireGuard card using the deploy-wireguard button which has a reliable ID
+                    const deployWireguardButton = document.getElementById('deploy-wireguard');
+                    if (deployWireguardButton) {
+                        containerCard = deployWireguardButton.closest('.settings-card');
+                        console.log('Found WireGuard container card using deploy-wireguard button:', containerCard);
+                    }
+                }
+
+                if (containerCard) {
+                    console.log(`Updating status indicator for ${containerName}`);
+                    // Update status indicator
+                    const statusIndicator = containerCard.querySelector('.status-indicator');
+                    if (statusIndicator) {
+                        console.log('Found status indicator, updating...');
+                        statusIndicator.className = 'status-indicator status-installed';
+                        const icon = statusIndicator.querySelector('i');
+                        if (icon) {
+                            icon.className = 'fas fa-circle-pause';
+                        }
+                        const statusText = statusIndicator.querySelector('span');
+                        if (statusText) {
+                            statusText.textContent = t('Installed') + ' (' + t('exited') + ')';
+                            statusText.setAttribute('data-i18n', 'Installed');
+                            console.log('Updated status text to Installed (exited)');
+                        }
+                    } else {
+                        console.log('No status indicator found');
+                    }
+
+                    console.log(`Updating buttons for ${containerName}`);
+                    // Update buttons
+                    const actionsContainer = containerCard.querySelector('.form-actions');
+                    if (actionsContainer) {
+                        console.log('Found actions container');
+                        // Remove stop button if it exists
+                        const stopButton = containerCard.querySelector(`#stop-${containerName}`);
+                        if (stopButton) {
+                            console.log('Removing stop button');
+                            stopButton.remove();
+                        }
+
+                        // Add start button
+                        const startButton = document.createElement('button');
+                        startButton.type = 'button';
+                        startButton.id = `start-${containerName}`;
+                        startButton.className = 'btn primary';
+                        startButton.innerHTML = '<i class="fas fa-play"></i> <span data-i18n="Start Container"></span>';
+                        startButton.querySelector('span').textContent = t('Start Container');
+                        
+                        startButton.addEventListener('click', function() {
+                            startContainer(containerName);
+                        });
+                        
+                        actionsContainer.appendChild(startButton);
+                    } else {
+                        console.log('No actions container found');
+                    }
+                } else {
+                    console.log(`No container card found for ${containerName}`);
+                }
+
+                // Use a translatable message format
+                let message = '';
+                if (containerName === 'npm') {
+                    message = t('NPM container stopped successfully.');
+                } else if (containerName === 'wireguard') {
+                    message = t('WireGuard container stopped successfully.');
+                } else {
+                    message = t('Container stopped successfully.');
+                }
+                showSuccess(message);
+            } else {
+                showError(t('Error') + ': ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error(`Error stopping container ${containerName}:`, error);
+            showError(t('Error') + ': ' + error);
+        });
+    }
+    
+    // Function to refresh just the container card without reloading the page
+    function refreshContainerCard(containerName) {
+        console.log(`Refreshing container card for ${containerName}`);
+        
+        // Add a slight delay to ensure the container status has updated
+        setTimeout(() => {
+            console.log(`Making fetch request for ${containerName} status`);
+            fetch(`/container/status/${containerName}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(t('HTTP error') + `: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log(`Received data for ${containerName}:`, data);
+                if (data.success) {
+                    // Find the container card using container-specific IDs instead of text content
+                    let containerCard = null;
+                    if (containerName === 'npm') {
+                        // Find the NPM card using the deploy-npm button which has a reliable ID
+                        const deployNpmButton = document.getElementById('deploy-npm');
+                        if (deployNpmButton) {
+                            containerCard = deployNpmButton.closest('.settings-card');
+                            console.log('Found NPM container card using deploy-npm button:', containerCard);
+                        }
+                    } else if (containerName === 'wireguard') {
+                        // Find the WireGuard card using the deploy-wireguard button which has a reliable ID
+                        const deployWireguardButton = document.getElementById('deploy-wireguard');
+                        if (deployWireguardButton) {
+                            containerCard = deployWireguardButton.closest('.settings-card');
+                            console.log('Found WireGuard container card using deploy-wireguard button:', containerCard);
+                        }
+                    }
+                    
+                    if (!containerCard) {
+                        console.error('Could not find container card for', containerName);
+                        return;
+                    }
+                    
+                    // Update status indicator
+                    const statusIndicator = containerCard.querySelector('.status-indicator');
+                    console.log(`Status indicator for ${containerName}:`, statusIndicator);
+                    
+                    if (statusIndicator) {
+                        const oldClass = statusIndicator.className;
+                        statusIndicator.className = `status-indicator ${
+                            data.running ? 'status-running' : 
+                            data.installed ? 'status-installed' : 
+                            'status-not-installed'
+                        }`;
+                        console.log(`Updated status indicator class from "${oldClass}" to "${statusIndicator.className}"`);
+                        
+                        const icon = statusIndicator.querySelector('i');
+                        if (icon) {
+                            const oldIconClass = icon.className;
+                            icon.className = `fas ${
+                                data.running ? 'fa-circle-check' : 
+                                data.installed ? 'fa-circle-pause' : 
+                                'fa-circle-xmark'
+                            }`;
+                            console.log(`Updated icon class from "${oldIconClass}" to "${icon.className}"`);
+                        }
+                        
+                        const statusText = statusIndicator.querySelector('span');
+                        if (statusText) {
+                            const oldText = statusText.textContent;
+                            const oldAttr = statusText.getAttribute('data-i18n');
+                            
+                            if (data.running) {
+                                statusText.textContent = t('Running');
+                                statusText.setAttribute('data-i18n', 'Running');
+                            } else if (data.installed) {
+                                const containerStatus = t('Installed');
+                                const statusDetail = data.status ? ' (' + t(data.status) + ')' : '';
+                                statusText.textContent = containerStatus + statusDetail;
+                                statusText.setAttribute('data-i18n', 'Installed');
+                            } else {
+                                statusText.textContent = t('Not Installed');
+                                statusText.setAttribute('data-i18n', 'Not Installed');
+                            }
+                            
+                            console.log(`Updated status text from "${oldText}" (attr: ${oldAttr}) to "${statusText.textContent}" (attr: ${statusText.getAttribute('data-i18n')})`);
+                        }
+                    }
+                    
+                    // Update deploy button
+                    const deployButton = containerName === 'npm' ? 
+                        containerCard.querySelector('#deploy-npm') : 
+                        containerCard.querySelector('#deploy-wireguard');
+                    console.log(`Deploy button for ${containerName}:`, deployButton);
+                        
+                    if (deployButton) {
+                        if (data.installed) {
+                            deployButton.disabled = true;
+                            const span = deployButton.querySelector('span');
+                            if (span) {
+                                span.textContent = t('Already Installed');
+                                span.setAttribute('data-i18n', 'Already Installed');
+                            }
+                        } else {
+                            deployButton.disabled = false;
+                            const span = deployButton.querySelector('span');
+                            if (span) {
+                                if (containerName === 'npm') {
+                                    span.textContent = t('Install Reverse Proxy');
+                                    span.setAttribute('data-i18n', 'Install Reverse Proxy');
+                                } else {
+                                    span.textContent = t('Install WireGuard VPN Server');
+                                    span.setAttribute('data-i18n', 'Install WireGuard VPN Server');
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Get the form-actions container that will hold the buttons
+                    let actionsContainer = null;
+                    
+                    // First try to find the form-actions that already has related buttons
+                    if (containerName === 'npm') {
+                        actionsContainer = containerCard.querySelector('.form-actions');
+                    } else if (containerName === 'wireguard') {
+                        actionsContainer = containerCard.querySelector('.form-actions');
+                    }
+                    
+                    console.log(`Actions container for ${containerName}:`, actionsContainer);
+                    
+                    if (!actionsContainer) {
+                        console.error('Could not find actions container for', containerName);
+                        return;
+                    }
+                    
+                    // Remove existing start/stop buttons to avoid duplicates
+                    const existingStartButton = containerCard.querySelector(`#start-${containerName}`);
+                    if (existingStartButton) {
+                        console.log(`Removing existing start button for ${containerName}`);
+                        existingStartButton.remove();
+                    }
+                    
+                    const existingStopButton = containerCard.querySelector(`#stop-${containerName}`);
+                    if (existingStopButton) {
+                        console.log(`Removing existing stop button for ${containerName}`);
+                        existingStopButton.remove();
+                    }
+                    
+                    // Add the appropriate buttons based on container state
+                    console.log(`Container ${containerName} state: installed=${data.installed}, running=${data.running}`);
+                    
+                    if (data.installed && !data.running) {
+                        // Add start button
+                        console.log(`Adding start button for ${containerName}`);
+                        const startButton = document.createElement('button');
+                        startButton.type = 'button';
+                        startButton.id = `start-${containerName}`;
+                        startButton.className = 'btn primary';
+                        startButton.innerHTML = '<i class="fas fa-play"></i> <span data-i18n="Start Container"></span>';
+                        startButton.querySelector('span').textContent = t('Start Container');
+                        
+                        // Add event listener to the new button
+                        startButton.addEventListener('click', function() {
+                            startContainer(containerName);
+                        });
+                        
+                        actionsContainer.appendChild(startButton);
+                    }
+                    
+                    if (data.running) {
+                        // Add stop button
+                        console.log(`Adding stop button for ${containerName}`);
+                        const stopButton = document.createElement('button');
+                        stopButton.type = 'button';
+                        stopButton.id = `stop-${containerName}`;
+                        stopButton.className = 'btn danger';
+                        stopButton.innerHTML = '<i class="fas fa-stop"></i> <span data-i18n="Stop Container"></span>';
+                        stopButton.querySelector('span').textContent = t('Stop Container');
+                        
+                        // Add event listener to the new button
+                        stopButton.addEventListener('click', function() {
+                            if (containerName === 'npm') {
+                                showConfirmModal(
+                                    t('Stop NPM Container'),
+                                    t('Are you sure you want to stop the NPM container?'),
+                                    t('Stop'),
+                                    function() {
+                                        stopContainer('npm');
+                                    }
+                                );
+                            } else if (containerName === 'wireguard') {
+                                showConfirmModal(
+                                    t('Stop WireGuard Container'),
+                                    t('Are you sure you want to stop the WireGuard container?'),
+                                    t('Stop'),
+                                    function() {
+                                        stopContainer('wireguard');
+                                    }
+                                );
+                            } else {
+                                showConfirmModal(
+                                    t('Stop Container'),
+                                    t('Are you sure you want to stop this container?'),
+                                    t('Stop'),
+                                    function() {
+                                        stopContainer(containerName);
+                                    }
+                                );
+                            }
+                        });
+                        
+                        actionsContainer.appendChild(stopButton);
+                    }
+                    
+                    // Apply translations for the new elements
+                    if (typeof updateSettingsTranslations === 'function') {
+                        updateSettingsTranslations();
+                    }
+                    
+                    console.log(`Finished refreshing container card for ${containerName}`);
+                } else {
+                    const errorMsg = data.error ? data.error : t('Unknown error');
+                    console.error('Error refreshing container status:', errorMsg);
+                    showError(t('Error getting container status') + ': ' + errorMsg);
+                }
+            })
+            .catch(error => {
+                console.error('Error refreshing container status:', error.message);
+                
+                // Add translations for common error messages
+                let errorMessage = error.message;
+                if (error.message === 'Failed to fetch') {
+                    errorMessage = t('Failed to fetch container status');
+                } else if (error.message.includes('NetworkError')) {
+                    errorMessage = t('Network error while fetching container status');
+                }
+                
+                showError(t('Error refreshing container status') + ': ' + errorMessage);
+            });
+        }, 1000); // 1 second delay
+    }
+    
+    // Save Services Configuration
+    document.getElementById('save-services').addEventListener('click', function() {
+        saveServicesConfiguration();
+    });
+
+    // Save User Preferences
+    document.getElementById('save-preferences').addEventListener('click', function() {
+        saveUserPreferences();
+    });
+
+    // Function to save services configuration
+    function saveServicesConfiguration() {
+        const formData = new FormData();
+        
+        // NPM Settings
+        formData.append('npm_identity', document.getElementById('npm_identity').value);
+        formData.append('npm_secret', document.getElementById('npm_secret').value);
+        formData.append('npm_domain', document.getElementById('npm_domain').value);
+        
+        // WireGuard Settings
+        const wgPublicIpInput = document.getElementById('wg_public_ip');
+        if (wgPublicIpInput) {
+            formData.append('wg_public_ip', wgPublicIpInput.value);
+        }
+        
+        // Log Files
+        const logPaths = document.querySelectorAll('input[name="log_path[]"]');
+        
+        // Only look for log_type if it exists in the form
+        const logTypes = document.querySelectorAll('select[name="log_type[]"]');
+        const hasLogTypes = logTypes.length > 0;
+        
+        for (let i = 0; i < logPaths.length; i++) {
+            formData.append('log_path[]', logPaths[i].value);
+            if (hasLogTypes && i < logTypes.length) {
+                formData.append('log_type[]', logTypes[i].value);
+            }
+        }
+        
+        // Add loading indicator
+        const saveButton = document.getElementById('save-services');
+        const originalButtonContent = saveButton.innerHTML;
+        saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('Saving...');
+        saveButton.disabled = true;
+        
+        // Make the fetch request to save services configuration
+        fetch('/settings/services', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(Object.fromEntries(formData))
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Restore button
+            saveButton.innerHTML = originalButtonContent;
+            saveButton.disabled = false;
+            
+            if (data.success) {
+                showSuccess(t('Services configuration saved successfully'));
+            } else {
+                showError(data.message || t('Failed to save services configuration'));
+            }
+        })
+        .catch(error => {
+            // Restore button
+            saveButton.innerHTML = originalButtonContent;
+            saveButton.disabled = false;
+            
+            console.error('Error saving services configuration:', error);
+            showError(t('Failed to save services configuration'));
+        });
+    }
+    
+    // Function to save user preferences
+    function saveUserPreferences() {
+        // Create JSON data object
+        const data = {
+            timezone: document.getElementById('timezone').value,
+            primary_color: document.getElementById('primary_color').value
+        };
+        
+        // Add loading indicator
+        const saveButton = document.getElementById('save-preferences');
+        const originalButtonContent = saveButton.innerHTML;
+        saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('Saving...');
+        saveButton.disabled = true;
+        
+        // Make the fetch request to save user preferences
+        fetch('/settings/preferences', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Restore button
+            saveButton.innerHTML = originalButtonContent;
+            saveButton.disabled = false;
+            
+            if (data.success) {
+                showSuccess(t('User preferences saved successfully'));
+                // Save color to localStorage for immediate use across sessions
+                localStorage.setItem('primaryColor', document.getElementById('primary_color').value);
+            } else {
+                showError(data.message || t('Failed to save user preferences'));
+            }
+        })
+        .catch(error => {
+            // Restore button
+            saveButton.innerHTML = originalButtonContent;
+            saveButton.disabled = false;
+            
+            console.error('Error saving user preferences:', error);
+            showError(t('Failed to save user preferences'));
+        });
+    }
+    
+    // Color picker functionality
+    const primaryColorPicker = document.getElementById('primary_color');
+    const resetColorButton = document.getElementById('reset_color');
+    const DEFAULT_PRIMARY_COLOR = '#2d5a4f';
+    
+    // Store the original color when the page loads for cancel/reset functionality
+    let originalPrimaryColor = primaryColorPicker.value;
+    
+    // Rate limiting variables
+    let lastUpdate = 0;
+    const UPDATE_INTERVAL = 100; // 10Hz update rate
+    let updateTimeout = null;
+    
+    // Initialize with the server-side value (from the HTML) as first priority,
+    // then saved localStorage value, and finally default color
+    const serverColor = primaryColorPicker.value; // From the HTML value attribute
+    const savedColor = localStorage.getItem('primaryColor');
+    
+    // Use server color if available, otherwise use saved color or default
+    const initialColor = serverColor || savedColor || DEFAULT_PRIMARY_COLOR;
+    primaryColorPicker.value = initialColor;
+    
+    // Always store the current color in localStorage for consistent experience
+    if (serverColor && (!savedColor || savedColor !== serverColor)) {
+        localStorage.setItem('primaryColor', serverColor);
+    }
+    
+    // Apply the color on page load
+    applyPrimaryColor(primaryColorPicker.value);
+    
+    // Handle color change with rate limiting during dragging (input)
+    primaryColorPicker.addEventListener('input', function() {
+        const now = Date.now();
+        const newColor = this.value;
+        
+        // Clear any pending timeout
+        if (updateTimeout) {
+            clearTimeout(updateTimeout);
+        }
+        
+        // If enough time has passed since last update, update immediately
+        if (now - lastUpdate >= UPDATE_INTERVAL) {
+            previewPrimaryColor(newColor);
+            lastUpdate = now;
+        } else {
+            // Schedule an update for when the interval has passed
+            updateTimeout = setTimeout(() => {
+                previewPrimaryColor(newColor);
+                lastUpdate = Date.now();
+            }, UPDATE_INTERVAL - (now - lastUpdate));
+        }
+    });
+    
+    // Handle color change completion
+    primaryColorPicker.addEventListener('change', function() {
+        // Just preview the color - don't save to localStorage
+        previewPrimaryColor(this.value);
+    });
+    
+    // Reset to default color
+    resetColorButton.addEventListener('click', function() {
+        // Show loading on the button
+        const originalText = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('Resetting...');
+        this.disabled = true;
+        
+        // First try to get the default color from localStorage or use the hardcoded default
+        const savedDefaultColor = localStorage.getItem('defaultPrimaryColor') || DEFAULT_PRIMARY_COLOR;
+        
+        // Apply color immediately for preview
+        primaryColorPicker.value = savedDefaultColor;
+        previewPrimaryColor(savedDefaultColor);
+        
+        // If we already have a saved default color, complete the process
+        if (localStorage.getItem('defaultPrimaryColor')) {
+            resetColorButton.innerHTML = originalText;
+            resetColorButton.disabled = false;
+            showSuccess(t('Color reset to default'));
+            return;
+        }
+        
+        // If no saved default color, fetch from server
+        fetch('/api/settings/default-color')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                resetColorButton.innerHTML = originalText;
+                resetColorButton.disabled = false;
+                
+                if (data.success) {
+                    const defaultColor = data.default_color || DEFAULT_PRIMARY_COLOR;
+                    // Save the default color to localStorage for future use
+                    localStorage.setItem('defaultPrimaryColor', defaultColor);
+                    primaryColorPicker.value = defaultColor;
+                    
+                    // Fully preview the color
+                    previewPrimaryColor(defaultColor);
+                    showSuccess(t('Color reset to default'));
+                } else {
+                    // Server request failed but we've already applied the default color
+                    showSuccess(t('Color reset to default (using local value)'));
+                }
+            })
+            .catch(error => {
+                resetColorButton.innerHTML = originalText;
+                resetColorButton.disabled = false;
+                
+                console.error('Error fetching default color:', error);
+                showSuccess(t('Color reset to default (using local value)'));
+            });
+    });
+    
+    // Preview color changes locally without saving to localStorage
+    function previewPrimaryColor(color) {
+        // Apply CSS variables only for preview
+        const r = parseInt(color.slice(1, 3), 16);
+        const g = parseInt(color.slice(3, 5), 16);
+        const b = parseInt(color.slice(5, 7), 16);
+        
+        document.documentElement.style.setProperty('--primary', color);
+        document.documentElement.style.setProperty('--primary-rgb', `${r}, ${g}, ${b}`);
+        
+        // Update gradient variables
+        const darkerColor = adjustColorBrightness(color, -0.2);
+        const lighterColor = adjustColorBrightness(color, 0.2);
+        
+        // Create the gradient
+        const gradientStyle = `linear-gradient(135deg, rgba(${hexToRgb(lighterColor)}, 0.9) 0%, ${color} 50%, rgba(${hexToRgb(darkerColor)}, 0.95) 100%)`;
+        
+        document.documentElement.style.setProperty('--primary-gradient', gradientStyle);
+        document.documentElement.style.setProperty('--focus-ring-color', `rgba(${r}, ${g}, ${b}, 0.5)`);
+        document.documentElement.style.setProperty('--border-active', color);
+        
+        // Also handle light mode specific variables if in light mode
+        if (document.body.classList.contains('light-mode')) {
+            document.documentElement.style.setProperty('--glass', `rgba(${r}, ${g}, ${b}, 0.4)`);
+            document.documentElement.style.setProperty('--glass-gradient', 
+                `linear-gradient(135deg, rgba(${r}, ${g}, ${b}, 0.2), rgba(${r}, ${g}, ${b}, 0.05))`);
+            
+            // Update hexagons
+            document.querySelectorAll('.hexagons .hexagon').forEach(el => {
+                el.style.background = color;
+                el.style.opacity = '0.25';
+            });
+        }
+    }
+    
+    // Apply the primary color to CSS variables
+    function applyPrimaryColor(color) {
+        document.documentElement.style.setProperty('--primary', color);
+        
+        // Calculate and set RGB values
+        const r = parseInt(color.slice(1, 3), 16);
+        const g = parseInt(color.slice(3, 5), 16);
+        const b = parseInt(color.slice(5, 7), 16);
+        document.documentElement.style.setProperty('--primary-rgb', `${r}, ${g}, ${b}`);
+        
+        // Update gradient variables
+        const darkerColor = adjustColorBrightness(color, -0.2);
+        const lighterColor = adjustColorBrightness(color, 0.2);
+        
+        // Create the gradient
+        const gradientStyle = `linear-gradient(135deg, rgba(${hexToRgb(lighterColor)}, 0.9) 0%, ${color} 50%, rgba(${hexToRgb(darkerColor)}, 0.95) 100%)`;
+        
+        // Update all CSS variables that depend on the primary color
+        document.documentElement.style.setProperty('--primary-gradient', gradientStyle);
+        document.documentElement.style.setProperty('--focus-ring-color', `rgba(${r}, ${g}, ${b}, 0.5)`);
+        document.documentElement.style.setProperty('--border-active', color);
+        
+        // Also handle light mode specific variables if in light mode
+        if (document.body.classList.contains('light-mode')) {
+            document.documentElement.style.setProperty('--glass', `rgba(${r}, ${g}, ${b}, 0.4)`);
+            document.documentElement.style.setProperty('--glass-gradient', 
+                `linear-gradient(135deg, rgba(${r}, ${g}, ${b}, 0.2), rgba(${r}, ${g}, ${b}, 0.05))`);
+            
+            // Update hexagons
+            document.querySelectorAll('.hexagons .hexagon').forEach(el => {
+                el.style.background = color;
+                el.style.opacity = '0.25';
+            });
+        }
+        
+        // Let syncPrimaryColor handle all the direct element styling
+        if (window.syncPrimaryColor) {
+            window.syncPrimaryColor();
+        }
+    }
+    
+    // Save the primary color to localStorage
+    function savePrimaryColor(color) {
+        localStorage.setItem('primaryColor', color);
+    }
+    
+    // Helper function to adjust color brightness
+    function adjustColorBrightness(hex, percent) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        
+        const adjustedR = Math.max(0, Math.min(255, Math.round(r + (r * percent))));
+        const adjustedG = Math.max(0, Math.min(255, Math.round(g + (g * percent))));
+        const adjustedB = Math.max(0, Math.min(255, Math.round(b + (b * percent))));
+        
+        return `#${adjustedR.toString(16).padStart(2, '0')}${adjustedG.toString(16).padStart(2, '0')}${adjustedB.toString(16).padStart(2, '0')}`;
+    }
+    
+    // Helper function to convert hex to rgb
+    function hexToRgb(hex) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `${r}, ${g}, ${b}`;
+    }
+    
+    // Theme toggle functionality
+    const modeToggle = document.getElementById('modeToggle');
+    if (modeToggle) {
+        // Initialize toggle state based on current theme
+        const savedMode = localStorage.getItem('selectedMode') || 'light';
+        modeToggle.checked = savedMode === 'dark';
+        
+        // Handle toggle change
+        modeToggle.addEventListener('change', function() {
+            if (this.checked) {
+                document.body.classList.remove('light-mode');
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('selectedMode', 'dark');
+                
+                // Reset transparent elements to dark mode defaults
+                document.documentElement.style.removeProperty('--glass');
+                document.documentElement.style.removeProperty('--glass-gradient');
+                
+                // Reset hexagons in dark mode to default style
+                document.querySelectorAll('.hexagons .hexagon').forEach(el => {
+                    el.style.background = '';
+                    el.style.opacity = '';
+                });
+                
+                // Reset sidebar items in dark mode
+                document.querySelectorAll('.sidebar-item.active').forEach(el => {
+                    el.style.background = '';
+                });
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+                localStorage.setItem('selectedMode', 'light');
+                
+                // Apply custom colors to light mode elements
+                const savedColor = localStorage.getItem('primaryColor');
+                if (savedColor) {
+                    // Extract RGB values for primary color
+                    const r = parseInt(savedColor.slice(1, 3), 16);
+                    const g = parseInt(savedColor.slice(3, 5), 16);
+                    const b = parseInt(savedColor.slice(5, 7), 16);
+                    
+                    // Update light mode transparent elements
+                    document.documentElement.style.setProperty('--glass', `rgba(${r}, ${g}, ${b}, 0.4)`);
+                    document.documentElement.style.setProperty('--glass-gradient', 
+                        `linear-gradient(135deg, rgba(${r}, ${g}, ${b}, 0.2), rgba(${r}, ${g}, ${b}, 0.05))`);
+                    
+                    // Update hexagons
+                    document.querySelectorAll('.hexagons .hexagon').forEach(el => {
+                        el.style.background = savedColor;
+                        el.style.opacity = '0.25';
+                    });
+                    
+                    // Update sidebar items
+                    document.querySelectorAll('.sidebar-item.active').forEach(el => {
+                        el.style.background = `rgba(${r}, ${g}, ${b}, 0.9)`;
+                    });
+                }
+            }
+            
+            // Re-apply the primary color after theme change
+            const savedColor = localStorage.getItem('primaryColor');
+            if (savedColor) {
+                applyPrimaryColor(savedColor);
+            }
+        });
+    }
+    
+    // Load sessions and users on page load
+    loadUsers();
+    
+    // Setup event listeners for user management
+    document.getElementById('add-user').addEventListener('click', showUserModal);
+    
+    // Setup event listeners for container controls
+    const startWireguardBtn = document.getElementById('start-wireguard');
+    if (startWireguardBtn) {
+        startWireguardBtn.addEventListener('click', function() {
+            startContainer('wireguard');
+        });
+    }
+    
+    const stopWireguardBtn = document.getElementById('stop-wireguard');
+    if (stopWireguardBtn) {
+        stopWireguardBtn.addEventListener('click', function() {
+            showConfirmModal(
+                t('Stop WireGuard Container'),
+                t('Are you sure you want to stop the WireGuard container?'),
+                t('Stop'),
+                function() {
+                    stopContainer('wireguard');
+                }
+            );
+        });
+    }
+});
