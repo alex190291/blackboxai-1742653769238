@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="{{ get_locale() }}">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="csrf-token" content="{{ csrf_token() }}" />
+        <title>{% block title %}{{ _('Dashboard') }}{% endblock %}</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='css/style.css') }}?v={{ range(1, 10000) | random }}"
+        />
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='css/networkGraphs.css') }}"
+        />
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='css/standardized-modals.css') }}?v={{ range(1, 10000) | random }}"
+        />
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <!-- Add color synchronization script -->
+        <script src="{{ url_for('static', filename='colorSync.js') }}"></script>
+        {% block extra_styles %}{% endblock %} {% block head %}{% endblock %}
+        <script>
+            // Define a temporary t function immediately to prevent "t is not defined" errors
+            // This will be replaced by the real one when translations load
+            window.t = function(key) { return key; };
+        </script>
+    </head>
+    <body>
+        <div class="nav-tabs">
+            <div class="nav-links">
+                <a href="/" class="{% if request.path == '/' %}active{% endif %}" data-nav-link>{{ _('Dashboard') }}</a>
+                <a
+                    href="/rtad"
+                    class="{% if request.path.startswith('/rtad') %}active{% endif %}"
+                    data-nav-link
+                    >{{ _('RTAD Overview') }}</a
+                >
+                <a
+                    href="/npm"
+                    class="{% if request.path.startswith('/npm') %}active{% endif %}"
+                    data-nav-link
+                    >{{ _('Reverse Proxy') }}</a
+                >
+                <a
+                    href="/wireguard"
+                    class="{% if request.path.startswith('/wireguard') %}active{% endif %}"
+                    data-nav-link
+                    >{{ _('WireGuard VPN') }}</a
+                >
+                <a
+                    href="/settings"
+                    class="{% if request.path.startswith('/settings') %}active{% endif %}"
+                    data-nav-link
+                    >{{ _('Settings') }}</a
+                >
+            </div>
+            <div class="language-selector-container">
+                <button id="languageButton" class="language-button">
+                    <i class="fas fa-globe"></i>
+                    <span>{{ config['LANGUAGES'][get_locale()] }}</span>
+                </button>
+                <div id="languageDropdown" class="language-dropdown">
+                    {% for code, name in config['LANGUAGES'].items() %}
+                        <a href="{{ url_for('core.set_language', language=code) }}" 
+                           class="language-option {% if get_locale() == code %}active{% endif %}">
+                            {{ name }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% block content %}{% endblock %}
+        
+        <script>
+            // Language selector dropdown functionality
+            document.addEventListener('DOMContentLoaded', function() {
+                const languageButton = document.getElementById('languageButton');
+                const languageDropdown = document.getElementById('languageDropdown');
+                
+                languageButton.addEventListener('click', function(event) {
+                    // Calculate absolute position instead of relying on relative positioning
+                    const buttonRect = languageButton.getBoundingClientRect();
+                    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    
+                    // Position the dropdown at the absolute position of the button
+                    languageDropdown.style.top = (buttonRect.bottom + scrollTop) + 'px';
+                    languageDropdown.style.right = (window.innerWidth - buttonRect.right - scrollLeft) + 'px';
+                    
+                    // Toggle display
+                    languageDropdown.classList.toggle('show');
+                    
+                    // Stop event propagation
+                    event.stopPropagation();
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!languageButton.contains(event.target) && !languageDropdown.contains(event.target)) {
+                        languageDropdown.classList.remove('show');
+                    }
+                });
+                
+                // Add language change handler for dynamic translations
+                const languageOptions = document.querySelectorAll('.language-option');
+                languageOptions.forEach(option => {
+                    option.addEventListener('click', function() {
+                        // Extract language parameter from URL
+                        const href = this.getAttribute('href');
+                        const language = href.split('language=')[1];
+                        document.cookie = `locale=${language};path=/;max-age=${60*60*24*365}`;
+                        
+                        // Need to reload the page after language change to refresh server-side translations
+                        localStorage.setItem('shouldUpdateTranslations', 'true');
+                    
+                        // Then reload all translations
+                        if (window.navigationTranslations) {
+                            Object.keys(window.navigationTranslations).forEach(key => {
+                                const element = document.querySelector(`[data-nav-i18n="${key}"]`);
+                                if (element && window.navigationTranslations[key][language]) {
+                                    element.textContent = window.navigationTranslations[key][language];
+                                }
+                            });
+                        }
+                        
+                        // Call dashboard translations
+                        if (window.updateDashboardTranslations) {
+                            window.updateDashboardTranslations();
+                        }
+                        
+                        // Call NPM translations 
+                        if (window.updateNPMTranslations) {
+                            window.updateNPMTranslations();
+                        }
+                        
+                        // Call WireGuard translations
+                        if (window.updateWireGuardTranslations) {
+                            window.updateWireGuardTranslations();
+                        }
+                        
+                        // Call RTAD translations
+                        if (window.updateRTADTranslations) {
+                            window.updateRTADTranslations();
+                        }
+                        
+                        // Call Settings translations
+                        if (window.updateSettingsTranslations) {
+                            window.updateSettingsTranslations();
+                        }
+                        
+                        // Call Docker translations
+                        if (window.updateDockerTranslations) {
+                            window.updateDockerTranslations();
+                        }
+                    });
+                });
+                
+                // Check if we need to update translations after language change
+                if (localStorage.getItem('shouldUpdateTranslations') === 'true') {
+                    localStorage.removeItem('shouldUpdateTranslations');
+                    
+                    // Update all translations that might not be covered by Flask template
+                    setTimeout(function() {
+                        // Call NPM translations
+                        if (window.updateNPMTranslations) {
+                            window.updateNPMTranslations();
+                        }
+                        
+                        // Call dashboard translations directly as fallback
+                        if (window.updateDashboardTranslations) {
+                            window.updateDashboardTranslations();
+                        }
+                        
+                        // Call navigation translations
+                        if (window.updateNavigationTranslations) {
+                            window.updateNavigationTranslations();
+                        }
+                        
+                        // Call WireGuard translations
+                        if (window.updateWireGuardTranslations) {
+                            window.updateWireGuardTranslations();
+                        }
+                        
+                        // Call RTAD translations
+                        if (window.updateRTADTranslations) {
+                            window.updateRTADTranslations();
+                        }
+                        
+                        // Call Settings translations
+                        if (window.updateSettingsTranslations) {
+                            window.updateSettingsTranslations();
+                        }
+                        
+                        // Manually translate top navigation just in case
+                        translateTopNavigation();
+                    }, 500);
+                }
+            });
+            
+            // Helper function to translate top navigation
+            function translateTopNavigation() {
+                document.querySelectorAll('.nav-tabs .nav-links a').forEach(link => {
+                    const key = link.textContent.trim();
+                    link.textContent = t(key);
+                });
+            }
+            
+            // Call navigation translation on initial page load
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(translateTopNavigation, 100);
+            });
+
+            // Setup for translations
+            const locale = document.documentElement.lang || 'en';
+            
+            // Static translations for fallback
+            const staticTranslations = {
+                'en': {
+                    'Dashboard': 'Dashboard',
+                    'RTAD Overview': 'RTAD Overview',
+                    'Reverse Proxy': 'Reverse Proxy',
+                    'WireGuard VPN': 'WireGuard VPN',
+                    'Settings': 'Settings',
+                    'Update': 'Update',
+                    'Check': 'Check',
+                    'Delete': 'Delete',
+                    'Confirm': 'Confirm',
+                    'Cancel': 'Cancel',
+                    'Success': 'Success',
+                    'Error': 'Error',
+                    'Loading': 'Loading...'
+                    // Basic translations only, full set will be loaded dynamically
+                },
+                'de': {
+                    'Dashboard': 'Übersicht',
+                    'RTAD Overview': 'RTAD Übersicht',
+                    'Reverse Proxy': 'Reverse Proxy',
+                    'WireGuard VPN': 'WireGuard VPN',
+                    'Settings': 'Einstellungen',
+                    'Update': 'Aktualisieren',
+                    'Check': 'Prüfen',
+                    'Delete': 'Löschen'
+                    // Basic translations only, full set will be loaded dynamically
+                },
+                'es': {
+                    'Dashboard': 'Panel de Control',
+                    'RTAD Overview': 'Resumen de RTAD',
+                    'Reverse Proxy': 'Proxy Inverso',
+                    'WireGuard VPN': 'WireGuard VPN',
+                    'Settings': 'Configuración',
+                    'Update': 'Actualizar',
+                    'Check': 'Verificar',
+                    'Delete': 'Eliminar',
+                    'Confirm': 'Confirmar',
+                    'Cancel': 'Cancelar',
+                    'Success': 'Éxito',
+                    'Error': 'Error',
+                    'Loading': 'Cargando...'
+                    // Basic translations only, full set will be loaded dynamically
+                }
+            };
+            
+            // Immediately redefine the t function with static translations
+            window.t = function(key) {
+                return staticTranslations[locale]?.[key] || staticTranslations['en'][key] || key;
+            };
+            
+            // Load translations dynamically from external files
+            async function loadTranslations() {
+                try {
+                    // Import the translations module dynamically
+                    const translationsModule = await import('/static/translations/index.js');
+                    // Make the translation function globally available with the complete translations
+                    window.translations = translationsModule.default;
+                    window.t = function(key) {
+                        return translationsModule.t(key, locale);
+                    };
+                    console.log('Translations loaded successfully');
+                    // Set a flag and dispatch an event to notify that translations are loaded
+                    window.translationsLoaded = true;
+                    window.dispatchEvent(new Event('translationsLoaded'));
+                } catch (error) {
+                    console.error('Error loading translations:', error);
+                    // We already have a fallback in place
+                }
+            }
+            
+            // Load translations
+            loadTranslations();
+
+            // Handle navigation to ensure translations are applied after page navigation
+            document.addEventListener('DOMContentLoaded', function() {
+                // Add click event listeners to navigation links
+                document.querySelectorAll('[data-nav-link]').forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        // Store the fact we're navigating so we can apply translations 
+                        // when the page loads
+                        localStorage.setItem('isNavigating', 'true');
+                    });
+                });
+
+                // Check if we came from navigation and need to apply translations
+                if (localStorage.getItem('isNavigating') === 'true') {
+                    // Clear the navigation flag
+                    localStorage.removeItem('isNavigating');
+                    
+                    // Apply translations with multiple delays to ensure they catch
+                    setTimeout(function() {
+                        applyAllTranslations();
+                    }, 100);
+                    
+                    setTimeout(function() {
+                        applyAllTranslations();
+                    }, 500);
+                }
+            });
+
+            // Helper function to apply all available translation functions
+            function applyAllTranslations() {
+                // Apply all translation functions that might be available
+                if (window.updateRTADTranslations) {
+                    window.updateRTADTranslations();
+                }
+                
+                if (window.updateNPMTranslations) {
+                    window.updateNPMTranslations();
+                }
+                
+                if (window.updateNavigationTranslations) {
+                    window.updateNavigationTranslations();
+                }
+                
+                if (window.updateWireGuardTranslations) {
+                    window.updateWireGuardTranslations();
+                }
+                
+                if (window.updateSettingsTranslations) {
+                    window.updateSettingsTranslations();
+                }
+                
+                if (window.updateDashboardTranslations) {
+                    window.updateDashboardTranslations();
+                }
+                
+                // Also apply the top navigation translations
+                translateTopNavigation();
+            }
+        </script>
+        <!-- Common Scripts for all pages -->
+        <script src="{{ url_for('static', filename='notifications.js') }}"></script>
+
+        <!-- Translation utility -->
+        <script src="{{ url_for('static', filename='translations/js/settingsTranslations.js') }}"></script>
+
+        <!-- Page-specific scripts -->
+        {% block scripts %}{% endblock %}
+        
+        <!-- Debug Integrator - Only loaded when debug_tab is enabled -->
+        {% if debug_tab %}
+        <script src="{{ url_for('debug.debug_integrator_js') }}"></script>
+        <script>
+            // Initialize debug panel with app-specific settings
+            if (window.DebugIntegrator) {
+                window.DebugIntegrator.updateConfig({
+                    mode: 'panel',
+                    position: 'bottom-right',
+                    buttonText: 'Debug Tools',
+                    panelStyles: {
+                        height: '60vh',
+                        backgroundColor: 'var(--background-color)'
+                    },
+                    monitorOnLoad: true
+                });
+            }
+        </script>
+        {% endif %}
+    </body>
+</html>
