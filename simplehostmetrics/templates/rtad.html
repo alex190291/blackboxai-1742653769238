@@ -1,0 +1,136 @@
+{% extends "base.html" %} {% block title %}{{ _('RTAD Overview') }}{% endblock %} {% block
+content %}
+<div class="hexagons" id="hexagon-container"></div>
+<div class="container">
+    <h1>{{ _('RealTime Attack Dashboard') }}</h1>
+
+    <!-- Attack Map Card -->
+    <div class="rtad card" style="width: 100%; margin-bottom: 1.5rem">
+        <div class="card-header">
+            <h2 class="card-title">{{ _('Attack Map') }}</h2>
+        </div>
+        <!-- Container für Leaflet-Karte -->
+        <div
+            class="detail-view"
+            style="display: block; max-height: 600px; overflow: auto"
+        >
+            <div
+                id="map"
+                style="
+                    width: 100%;
+                    height: 600px;
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                "
+            ></div>
+        </div>
+    </div>
+
+    <!-- Vorhandene SSH-Login-Card -->
+    <div class="rtad card" style="width: 100%; margin-bottom: 1.5rem">
+        <div class="card-header">
+            <h2 class="card-title">{{ _('Login Attempts over SSH') }}</h2>
+        </div>
+        <div
+            class="detail-view"
+            style="display: block; max-height: 400px; overflow: auto"
+        >
+            <table id="lastbTable" class="sortable">
+                <thead>
+                    <tr>
+                        <th>{{ _('IP Address') }}</th>
+                        <th>{{ _('Country') }}</th>
+                        <th>{{ _('City') }}</th>
+                        <th>{{ _('Timestamp') }}</th>
+                        <th>{{ _('User') }}</th>
+                        <th>{{ _('Failure Reason') }}</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Vorhandene Proxy-Events-Card -->
+    <div class="rtad card" style="width: 100%; margin-bottom: 1.5rem">
+        <div class="card-header">
+            <h2 class="card-title">{{ _('Proxy Events') }}</h2>
+        </div>
+        <div
+            class="detail-view"
+            style="display: block; max-height: 400px; overflow: auto"
+        >
+            <table id="proxyTable" class="sortable">
+                <thead>
+                    <tr>
+                        <th>{{ _('Domain') }}</th>
+                        <th>{{ _('IP Address') }}</th>
+                        <th>{{ _('Country') }}</th>
+                        <th>{{ _('City') }}</th>
+                        <th>{{ _('Timestamp') }}</th>
+                        <th>{{ _('Proxy Type') }}</th>
+                        <th>{{ _('Error Code') }}</th>
+                        <th>{{ _('URL') }}</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!-- Mode Toggle Button (falls gewünscht) -->
+<button class="mode-toggle" id="modeToggle" title="{{ _('Toggle light/dark mode') }}">
+    <span class="bulb-icon">💡</span>
+</button>
+{% endblock %} {% block scripts %}
+<!-- Bereits enthaltene Scripts -->
+<script src="{{ url_for('static', filename='animations.js') }}"></script>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rtad/rtad.js') }}"></script>
+<script src="{{ url_for('static', filename='translations/js/navigationTranslations.js') }}"></script>
+<script src="{{ url_for('static', filename='translations/js/rtadTranslations.js') }}"></script>
+<script src="https://www.kryogenix.org/code/browser/sorttable/sorttable.js"></script>
+
+<!-- Leaflet + MarkerCluster Einbindung -->
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='js/rtad/leaflet/leaflet.css') }}"
+    integrity="{{ leaflet_css_sri }}"
+    crossorigin=""
+/>
+<script src="{{ url_for('static', filename='js/rtad/leaflet/leaflet.js') }}"></script>
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
+/>
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
+/>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<!-- Unsere Map-Logik (ex-map.js) -->
+<script src="{{ url_for('static', filename='map.js') }}"></script>
+
+<script>
+    // Update translations when language changes
+    document.addEventListener('DOMContentLoaded', function() {
+        const originalUpdateTranslations = window.updateNPMTranslations || function() {};
+        window.updateNPMTranslations = function() {
+            // Call original function if it exists
+            if (typeof originalUpdateTranslations === 'function') {
+                originalUpdateTranslations();
+            }
+            
+            // Update RTAD translations
+            if (window.updateRTADTranslations) {
+                window.updateRTADTranslations();
+            }
+            
+            // Update navigation translations
+            if (window.updateNavigationTranslations) {
+                window.updateNavigationTranslations();
+            }
+        };
+    });
+</script>
+{% endblock %}
