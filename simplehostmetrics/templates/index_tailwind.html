@@ -1,283 +1,60 @@
 {% extends "base_tailwind.html" %}
+{% block title %}{{ _('Dashboard') }}{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
     <!-- System Overview -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- CPU Card -->
-        <div class="bg-gray-800/50 backdrop-blur-md border border-gray-700/50 rounded-xl p-6 hover:transform hover:-translate-y-1 transition-all duration-200">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-gray-200 flex items-center">
-                    <i class="fas fa-microchip mr-2 text-primary-light"></i>
-                    CPU
-                </h2>
-                <button class="text-gray-400 hover:text-white transition-colors">
-                    <i class="fas fa-cog"></i>
-                </button>
-            </div>
-            <div class="space-y-4">
-                <div class="text-center">
-                    <div class="text-4xl font-bold text-primary">{{ cpu_usage }}%</div>
-                    <div class="text-sm text-gray-400 mt-1">Current Usage</div>
-                </div>
-                <div class="h-32 relative">
-                    <canvas id="cpuChart" class="w-full h-full"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Memory Card -->
-        <div class="bg-gray-800/50 backdrop-blur-md border border-gray-700/50 rounded-xl p-6 hover:transform hover:-translate-y-1 transition-all duration-200">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-gray-200 flex items-center">
-                    <i class="fas fa-memory mr-2 text-primary-light"></i>
-                    Memory
-                </h2>
-                <button class="text-gray-400 hover:text-white transition-colors">
-                    <i class="fas fa-cog"></i>
-                </button>
-            </div>
-            <div class="space-y-4">
-                <div class="text-center">
-                    <div class="text-4xl font-bold text-primary">{{ memory_usage }}%</div>
-                    <div class="text-sm text-gray-400 mt-1">Current Usage</div>
-                </div>
-                <div class="h-32 relative">
-                    <canvas id="memoryChart" class="w-full h-full"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Disk Card -->
-        <div class="bg-gray-800/50 backdrop-blur-md border border-gray-700/50 rounded-xl p-6 hover:transform hover:-translate-y-1 transition-all duration-200">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-gray-200 flex items-center">
-                    <i class="fas fa-hdd mr-2 text-primary-light"></i>
-                    Disk
-                </h2>
-                <button class="text-gray-400 hover:text-white transition-colors">
-                    <i class="fas fa-cog"></i>
-                </button>
-            </div>
-            <div class="space-y-4">
-                <div class="text-center">
-                    <div class="text-4xl font-bold text-primary">{{ disk_usage }}%</div>
-                    <div class="text-sm text-gray-400 mt-1">Used Space</div>
-                </div>
-                <div class="h-32 relative">
-                    <canvas id="diskChart" class="w-full h-full"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    {% include "partials/system_card_tailwind.html" %}
+    
     <!-- Network Activity -->
-    <div class="bg-gray-800/50 backdrop-blur-md border border-gray-700/50 rounded-xl p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-semibold text-gray-200 flex items-center">
-                <i class="fas fa-network-wired mr-2 text-primary-light"></i>
-                Network Activity
-            </h2>
-            <button class="text-gray-400 hover:text-white transition-colors">
-                <i class="fas fa-expand"></i>
-            </button>
-        </div>
-        <div class="h-64">
-            <canvas id="networkChart" class="w-full h-full"></canvas>
-        </div>
-        <div class="grid grid-cols-2 gap-4 mt-4">
-            <div class="text-center p-4 bg-gray-900/50 rounded-lg">
-                <div class="text-sm text-gray-400">Upload</div>
-                <div class="text-lg font-semibold text-primary">{{ network_upload }}</div>
-            </div>
-            <div class="text-center p-4 bg-gray-900/50 rounded-lg">
-                <div class="text-sm text-gray-400">Download</div>
-                <div class="text-lg font-semibold text-primary">{{ network_download }}</div>
-            </div>
-        </div>
-    </div>
-
+    {% include "partials/network_card_tailwind.html" %}
+    
     <!-- Docker Containers -->
-    <div class="bg-gray-800/50 backdrop-blur-md border border-gray-700/50 rounded-xl p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-lg font-semibold text-gray-200 flex items-center">
-                <i class="fab fa-docker mr-2 text-primary-light"></i>
-                Docker Containers
-            </h2>
-            <button class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                <i class="fas fa-plus mr-2"></i>
-                New Container
-            </button>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
-                    <tr class="text-left text-gray-400 border-b border-gray-700">
-                        <th class="pb-3 font-medium">Name</th>
-                        <th class="pb-3 font-medium">Status</th>
-                        <th class="pb-3 font-medium">CPU</th>
-                        <th class="pb-3 font-medium">Memory</th>
-                        <th class="pb-3 font-medium">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-700">
-                    {% for container in containers %}
-                    <tr class="text-gray-300">
-                        <td class="py-4">{{ container.name }}</td>
-                        <td class="py-4">
-                            <span class="px-2 py-1 text-xs rounded-full {% if container.status == 'running' %}bg-green-500/20 text-green-400{% else %}bg-red-500/20 text-red-400{% endif %}">
-                                {{ container.status }}
-                            </span>
-                        </td>
-                        <td class="py-4">{{ container.cpu }}%</td>
-                        <td class="py-4">{{ container.memory }}%</td>
-                        <td class="py-4">
-                            <div class="flex space-x-2">
-                                <button class="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white">
-                                    <i class="fas fa-play"></i>
-                                </button>
-                                <button class="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white">
-                                    <i class="fas fa-stop"></i>
-                                </button>
-                                <button class="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+    {% include "partials/docker_card_tailwind.html" %}
 </div>
 
-<!-- Chart.js Initialization -->
+<!-- Mode Toggle Button -->
+<button class="fixed bottom-6 right-6 p-3 bg-gray-700/50 hover:bg-gray-600/50 rounded-full shadow-lg transition-all duration-200 text-gray-300 hover:text-white" id="modeToggle" title="{{ _('Toggle light/dark mode') }}">
+    <i class="fas fa-lightbulb"></i>
+</button>
+{% endblock %}
+
+{% block scripts %}
+<!-- Load dockerControls.js first to ensure the button is icon-only -->
+<script src="{{ url_for('static', filename='dockerControls.js') }}"></script>
+<script src="{{ url_for('static', filename='animations.js') }}"></script>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+<script src="{{ url_for('static', filename='charts.js') }}"></script>
+<script src="{{ url_for('static', filename='stats.js') }}"></script>
+<script src="{{ url_for('static', filename='customNetworkManager.js') }}"></script>
+<script src="{{ url_for('static', filename='translations/js/dashboardTranslations.js') }}"></script>
+<script src="{{ url_for('static', filename='translations/js/navigationTranslations.js') }}"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Common chart options
-    const commonOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: false
+    // Update translations when language changes
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add our dashboard translations updater to the global translations update
+        const originalUpdateTranslations = window.updateNPMTranslations || function() {};
+        window.updateNPMTranslations = function() {
+            // Call original function if it exists
+            if (typeof originalUpdateTranslations === 'function') {
+                originalUpdateTranslations();
             }
-        },
-        scales: {
-            x: {
-                grid: {
-                    color: 'rgba(255, 255, 255, 0.1)'
-                },
-                ticks: {
-                    color: 'rgba(255, 255, 255, 0.7)'
-                }
-            },
-            y: {
-                grid: {
-                    color: 'rgba(255, 255, 255, 0.1)'
-                },
-                ticks: {
-                    color: 'rgba(255, 255, 255, 0.7)'
-                }
+            
+            // Update dashboard translations
+            if (window.updateDashboardTranslations) {
+                window.updateDashboardTranslations();
             }
-        }
-    };
-
-    // Sample data - replace with real data
-    const timeLabels = Array.from({length: 10}, (_, i) => `${i}m ago`);
-    const cpuData = Array.from({length: 10}, () => Math.floor(Math.random() * 100));
-    const memoryData = Array.from({length: 10}, () => Math.floor(Math.random() * 100));
-    const diskData = Array.from({length: 10}, () => Math.floor(Math.random() * 100));
-
-    // CPU Chart
-    new Chart(document.getElementById('cpuChart'), {
-        type: 'line',
-        data: {
-            labels: timeLabels,
-            datasets: [{
-                data: cpuData,
-                borderColor: '#2d5a4f',
-                backgroundColor: 'rgba(45, 90, 79, 0.2)',
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: commonOptions
-    });
-
-    // Memory Chart
-    new Chart(document.getElementById('memoryChart'), {
-        type: 'line',
-        data: {
-            labels: timeLabels,
-            datasets: [{
-                data: memoryData,
-                borderColor: '#2d5a4f',
-                backgroundColor: 'rgba(45, 90, 79, 0.2)',
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: commonOptions
-    });
-
-    // Disk Chart
-    new Chart(document.getElementById('diskChart'), {
-        type: 'line',
-        data: {
-            labels: timeLabels,
-            datasets: [{
-                data: diskData,
-                borderColor: '#2d5a4f',
-                backgroundColor: 'rgba(45, 90, 79, 0.2)',
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: commonOptions
-    });
-
-    // Network Chart
-    new Chart(document.getElementById('networkChart'), {
-        type: 'line',
-        data: {
-            labels: timeLabels,
-            datasets: [
-                {
-                    label: 'Upload',
-                    data: Array.from({length: 10}, () => Math.floor(Math.random() * 100)),
-                    borderColor: '#2d5a4f',
-                    backgroundColor: 'rgba(45, 90, 79, 0.1)',
-                    fill: true,
-                    tension: 0.4
-                },
-                {
-                    label: 'Download',
-                    data: Array.from({length: 10}, () => Math.floor(Math.random() * 100)),
-                    borderColor: '#3c7669',
-                    backgroundColor: 'rgba(60, 118, 105, 0.1)',
-                    fill: true,
-                    tension: 0.4
-                }
-            ]
-        },
-        options: {
-            ...commonOptions,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        font: {
-                            family: "'Inter', sans-serif"
-                        }
-                    }
-                }
+            
+            // Update navigation translations
+            if (window.updateNavigationTranslations) {
+                window.updateNavigationTranslations();
             }
-        }
+            
+            // Ensure the docker button is still icon-only
+            if (window.updateDockerTranslations) {
+                window.updateDockerTranslations();
+            }
+        };
     });
-});
 </script>
 {% endblock %}
