@@ -1,0 +1,665 @@
+#confirmModalMessage {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--text);
+}
+
+.modal-overlay {
+    display: none;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.settings-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.settings-card {
+    background-color: var(--bg-card);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    width: 100%;
+}
+
+.card-header {
+    background-color: var(--bg-dark);
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.card-title i {
+    margin-right: 0.5rem;
+    color: var(--primary);
+}
+
+.card-body {
+    padding: 1.5rem;
+    width: auto;
+}
+
+.container-status {
+    margin-bottom: 1.5rem;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 4px;
+    background-color: var(--bg-dark);
+}
+
+.status-indicator i {
+    margin-right: 0.5rem;
+}
+
+.status-running i {
+    color: var(--success);
+}
+
+.status-installed i {
+    color: var(--warning);
+}
+
+.status-not-installed i {
+    color: var(--danger);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group.inline {
+    flex: 1;
+}
+
+.form-hint {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+.settings-card .form-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0;
+    background: transparent;
+    border-top: none;
+    position: relative;
+    justify-content: flex-start;
+}
+
+.form-actions.no-frame {
+    background: transparent;
+    border-top: none;
+    padding: 1rem 0;
+    position: relative;
+}
+
+.logfile-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    border: none;
+    background-color: var(--danger);
+    color: white;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.btn-icon:hover {
+    background-color: var(--danger-hover);
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+#confirmationModal .modal-container {
+    max-width: 450px;
+}
+
+/* Data Tables */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+.data-table th {
+    font-weight: bold;
+    background-color: var(--card-header-bg);
+}
+
+.data-table tr:hover {
+    background-color: var(--hover-bg);
+}
+
+.data-table .btn-icon {
+    margin: 0 auto;
+    display: block;
+    box-shadow: none;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.data-table .btn-icon:hover {
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+/* Current session highlighting */
+.current-session {
+    background-color: rgba(var(--primary-rgb), 0.15);
+}
+
+.current-session:hover {
+    background-color: rgba(var(--primary-rgb), 0.25);
+}
+
+/* Remove the after pseudo-element since we're now using a badge */
+.current-session:after {
+    content: none;
+}
+
+/* Current session badge */
+.current-badge {
+    display: inline-block;
+    background-color: var(--primary);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-right: 8px;
+    font-weight: bold;
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 1rem 0;
+}
+
+.loading-spinner i {
+    margin-right: 0.5rem;
+}
+
+/* Session management specific styles */
+#sessions-container, 
+#users-container {
+    margin-top: 0.5rem;
+    width: 100%;
+    overflow: visible;
+}
+
+.session-cards {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+    grid-gap: 1rem;
+    margin-top: 1rem;
+    width: 100%;
+}
+
+.session-card, 
+.user-card {
+    position: relative;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+    background: var(--card-bg);
+    color: var(--text);
+    z-index: 1;
+    height: auto;
+    min-width: 0;
+}
+
+.session-card::before,
+.user-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: transparent;
+    pointer-events: none;
+}
+
+.session-card:hover, 
+.user-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px var(--shadow-color);
+    background: var(--card-bg-hover);
+}
+
+.session-card.current-session {
+    border-color: var(--primary);
+    background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+.current-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: var(--primary);
+    color: white;
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: bold;
+    z-index: 2;
+}
+
+.session-card-content,
+.user-card-content {
+    padding: 1rem;
+}
+
+.session-device {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.device-icon {
+    width: 40px;
+    height: 40px;
+    background-color: var(--bg-dark);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+}
+
+.device-icon i {
+    font-size: 1.25rem;
+    color: var(--primary);
+}
+
+.device-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.device-name {
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.device-type {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.session-details {
+    margin-bottom: 1rem;
+}
+
+.session-detail {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.session-detail i {
+    width: 20px;
+    color: var(--text-muted);
+    margin-right: 0.5rem;
+}
+
+.session-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.session-actions .btn-icon {
+    background-color: var(--danger);
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.session-actions .btn-icon:hover {
+    background-color: var(--danger-hover);
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    text-align: center;
+}
+
+.error-container i {
+    font-size: 2rem;
+    color: var(--danger);
+    margin-bottom: 1rem;
+}
+
+.error-container .error {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.error-container .error-details {
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.retry-btn {
+    margin-top: 1rem;
+}
+
+.no-data {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+}
+
+/* Custom CSS for tablets and mobile devices */
+@media (max-width: 768px) {
+    .session-cards,
+    .user-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .session-card,
+    .user-card {
+        max-width: 100%;
+    }
+}
+
+/* User management specific styles */
+#users-container {
+    margin-top: 0.5rem;
+}
+
+.user-cards {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+    grid-gap: 1rem;
+    margin-top: 1rem;
+    width: 100%;
+}
+
+.user-card-content {
+    padding: 1.25rem;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.user-icon {
+    width: 40px;
+    height: 40px;
+    background-color: var(--bg-dark);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.user-icon i {
+    font-size: 1.25rem;
+    color: var(--primary);
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.user-email {
+    font-weight: bold;
+    font-size: 1rem;
+    word-break: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-top: 0.5rem;
+}
+
+.user-status.active {
+    background-color: var(--success);
+    color: white;
+}
+
+.user-status.inactive {
+    background-color: var(--danger);
+    color: white;
+}
+
+.user-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.user-actions .btn-icon {
+    margin-left: 0.5rem;
+    box-shadow: none;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.user-actions .btn-icon:hover {
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+/* Nested settings cards */
+.settings-card > .card-body {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 1rem !important;
+    justify-content: space-between !important;
+    align-items: stretch !important;
+}
+
+.settings-card .settings-card {
+    position: relative;
+    padding: 1.5rem;
+    margin-bottom: 0 !important;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+    background: var(--card-bg);
+    color: var(--text);
+    z-index: 1;
+    flex: 1 1 calc(33% - 1rem) !important;
+    min-width: 300px !important;
+    max-width: calc(50% - 0.5rem) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-self: stretch !important;
+}
+
+.settings-card .settings-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: transparent;
+    pointer-events: none;
+}
+
+.settings-card .settings-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px var(--shadow-color);
+    background: var(--card-bg-hover);
+}
+
+.settings-card .settings-card .card-header {
+    background-color: rgba(var(--bg-dark-rgb), 0.5) !important;
+}
+
+.settings-card .settings-card .card-body {
+    padding: 1.25rem !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.settings-card .settings-card:last-child {
+    margin-bottom: 0 !important;
+}
+
+@media (max-width: 992px) {
+    .settings-card > .card-body {
+        flex-direction: column !important;
+    }
+    
+    .settings-card .settings-card {
+        margin-bottom: 1rem !important;
+        max-width: 100% !important;
+    }
+    
+    .settings-card .settings-card:last-child {
+        margin-bottom: 0 !important;
+    }
+}
+
+.color-picker-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.color-picker-container input[type="color"] {
+    -webkit-appearance: none;
+    width: 60px;
+    height: 30px;
+    border: none;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.color-picker-container input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-picker-container input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+.color-picker-container input[type="color"]::-moz-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+/* Remove all the CSS we added for the theme toggle styling */
+/* Theme toggle styling */
+.form-group.toggle {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+}
+
+/* Toggle switch styles are now in the main style.css file */
+
+.form-group.toggle .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.dark-mode-label, .light-mode-label {
+    font-weight: normal;
+}
+
+.dark-mode .dark-mode-label {
+    font-weight: bold;
+    color: var(--primary);
+}
+
+.light-mode .light-mode-label {
+    font-weight: bold;
+    color: var(--primary);
+}
+
+/* End theme toggle styling */ 
