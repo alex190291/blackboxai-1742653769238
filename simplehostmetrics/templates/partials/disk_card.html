@@ -1,0 +1,21 @@
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fas fa-hdd"></i> {{ _('Disk') }}
+        </div>
+        <div class="card-actions">
+            <button class="btn-icon"><i class="fas fa-expand"></i></button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="metric-value" id="diskOverlay">0 GB</div>
+        <div class="metric-label">{{ _('Used') }}</div>
+        <div class="chart-container">
+            <canvas id="diskChart"></canvas>
+        </div>
+    </div>
+    <div class="detail-view" id="disk-detail-view">
+        <div class="graph-label">{{ _('7-Day Disk Used') }}</div>
+        <canvas id="diskHistoryChart"></canvas>
+    </div>
+</div>
