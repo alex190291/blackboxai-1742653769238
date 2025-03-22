@@ -1,0 +1,27 @@
+{
+  "name": "simplehostmetrics",
+  "version": "1.0.0",
+  "description": "",
+  "main": "debug.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alex190291/simplehostmetrics.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alex190291/simplehostmetrics/issues"
+  },
+  "homepage": "https://github.com/alex190291/simplehostmetrics#readme",
+  "devDependencies": {
+    "puppeteer": "^24.4.0"
+  }
+}
